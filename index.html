@@ -712,7 +712,16 @@ function maakConcept(){
   toast(bestaand.length ? "Let op: "+bestaand.length+" dag(en) in deze periode hebben al een rooster; opslaan overschrijft die." : "Concept gemaakt. Controleer en pas aan, dan Opslaan.");
 }
 function laadBestaand(){
-  const dagen=periode(); if(!dagen) return;
+  let dagen=periode(); if(!dagen) return;
+  if (!dagen.some(ds=>ROOSTER[ds])){
+    const t=iso(today0());
+    $("#mkvan").value = t>DATES[0] ? t : DATES[0]; $("#mktot").value = DATES[DATES.length-1];
+    dagen=periode(); if(!dagen) return;
+    toast("In die periode stond nog geen rooster. Hier is het huidige rooster vanaf vandaag.");
+    concept={};
+    dagen.forEach(ds => { concept[ds]={p: ROOSTER[ds] ? ROOSTER[ds].slice() : ["","","","","",""], opm: GEEN_VAART[ds]||""}; });
+    mkWeek=0; renderEditor(); return;
+  }
   concept={};
   dagen.forEach(ds => { concept[ds]={p: ROOSTER[ds] ? ROOSTER[ds].slice() : ["","","","","",""], opm: GEEN_VAART[ds]||""}; });
   mkWeek=0; renderEditor(); toast("Bestaand rooster geladen.");
