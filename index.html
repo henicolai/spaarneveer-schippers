@@ -1,0 +1,634 @@
+TEST <a>regel</a>
+  tweede<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spaarneveer · Schippersrooster</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#12304a; --navy-2:#1d4466; --water:#e8f0f5; --water-2:#d3e2ec;
+    --sig:#e8732a; --sig-soft:#fde9dc; --ok:#2f7d5b; --ok-soft:#e1f1e8;
+    --ink:#17232e; --muted:#5d6c78; --line:#d9e2e8; --card:#fff; --bg:#f6f8fa;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5}
+  h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0;letter-spacing:-.01em}
+  button{font:inherit;cursor:pointer}
+  header{background:var(--navy);color:#fff;position:relative;overflow:hidden}
+  .hero{max-width:980px;margin:0 auto;padding:28px 20px 70px;position:relative;z-index:1}
+  .kicker{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:#9ec3dc;font-weight:600}
+  .hero h1{font-size:clamp(1.9rem,5vw,2.8rem);margin:6px 0 6px}
+  .hero p{margin:0;color:#c9dbe7;max-width:560px}
+  .waves{position:absolute;left:0;right:0;bottom:-1px;height:60px;z-index:0}
+  .status{display:inline-flex;align-items:center;gap:8px;margin-top:16px;background:rgba(255,255,255,.1);padding:6px 12px;border-radius:999px;font-size:.88rem}
+  .dot{width:9px;height:9px;border-radius:50%;background:#7fd1a7;box-shadow:0 0 0 3px rgba(127,209,167,.25)}
+  .dot.off{background:#f0a37a;box-shadow:0 0 0 3px rgba(240,163,122,.25)}
+  nav{position:sticky;top:0;z-index:5;background:rgba(246,248,250,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav .in{max-width:980px;margin:0 auto;display:flex;gap:4px;padding:8px 14px;overflow-x:auto}
+  nav button{border:0;background:none;padding:8px 14px;border-radius:999px;color:var(--muted);font-weight:500;white-space:nowrap}
+  nav button.on{background:var(--navy);color:#fff}
+  main{max-width:980px;margin:0 auto;padding:22px 16px 60px}
+  section{display:none}
+  section.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+  .note{background:var(--water);border:1px solid var(--water-2);border-radius:12px;padding:12px 14px;font-size:.92rem;color:var(--navy-2);margin-bottom:16px}
+  .note.warn{background:var(--sig-soft);border-color:#f6c9a8;color:#8a3e10}
+  .weekbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .weekbar h2{font-size:1.35rem}
+  .weekbar .sub{color:var(--muted);font-size:.9rem}
+  .pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;color:var(--navy);font-weight:500}
+  .pill:hover{border-color:var(--navy-2)}
+  .days{display:grid;gap:12px}
+  @media(min-width:760px){.days{grid-template-columns:repeat(2,1fr)}}
+  .day{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .day.today{border-color:var(--sig);box-shadow:0 0 0 2px var(--sig-soft)}
+  .day.past{opacity:.55}
+  .dayhead{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px 6px}
+  .dayhead b{font-family:Fraunces,serif;font-size:1.1rem}
+  .dayhead span{color:var(--muted);font-size:.85rem}
+  .slot{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px dashed var(--line)}
+  .slot .t{font-weight:600;font-size:.92rem;min-width:98px}
+  .slot .who{flex:1;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .tag{font-size:.8rem;padding:3px 9px;border-radius:999px;background:var(--water);color:var(--navy-2);display:inline-flex;gap:5px;align-items:center}
+  .tag.me{background:var(--ok-soft);color:var(--ok);font-weight:600}
+  .tag.offer{background:var(--sig-soft);color:#8a3e10;text-decoration:line-through;text-decoration-color:rgba(138,62,16,.4)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .act.take{background:var(--sig)}
+  .tag button{border:0;background:none;padding:0;color:inherit;opacity:.6;font-size:.9rem;line-height:1}
+  .open{font-size:.8rem;color:var(--sig);font-weight:600}
+  .full{font-size:.8rem;color:var(--ok);font-weight:600}
+  .act{border:0;border-radius:10px;padding:7px 12px;font-weight:600;font-size:.85rem;background:var(--navy);color:#fff;white-space:nowrap}
+  .act.leave{background:#fff;color:var(--navy);border:1px solid var(--line)}
+  .act:disabled{opacity:.4;cursor:default}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.83rem;color:var(--muted);margin-top:14px}
+  .mine-list{display:grid;gap:10px}
+  .mine{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .mine b{font-family:Fraunces,serif}
+  .grid2{display:grid;gap:14px}
+  @media(min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
+  .card h3{font-size:1.15rem;margin-bottom:8px}
+  .card ol,.card ul{margin:6px 0 0;padding-left:20px}
+  .card li{margin:4px 0}
+  .big{font-family:Fraunces,serif;font-size:2rem;color:var(--sig);line-height:1}
+  .post{border-left:3px solid var(--sig);padding:4px 0 4px 12px;margin-bottom:14px}
+  .post .meta{color:var(--muted);font-size:.8rem}
+  .post p{margin:4px 0 0;white-space:pre-wrap}
+  textarea,input[type=text]{width:100%;font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+  .row{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+  .empty{color:var(--muted);font-size:.92rem}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:.9rem;transition:transform .25s;z-index:20}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px}
+  .me-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:16px}
+  .me-bar label{font-weight:600;color:var(--navy)}
+  .me-bar select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:150px}
+  .me-bar .hint{color:var(--muted);font-size:.85rem;flex-basis:100%}
+  .slot{flex-wrap:wrap;row-gap:6px}
+  .slot .t{flex-basis:100%;display:flex;gap:8px;align-items:baseline}
+  .slot .t small{color:var(--muted);font-weight:500;font-size:.75rem}
+  .pos{display:flex;align-items:center;gap:6px;flex:1 1 40%;min-width:0;flex-wrap:wrap}
+  .pos .lbl{font-size:.7rem;color:var(--muted);width:16px}
+  .name{font-size:.88rem;padding:4px 10px;border-radius:999px;background:var(--water);color:var(--navy-2);white-space:nowrap}
+  .name.me{background:var(--ok-soft);color:var(--ok);font-weight:600}
+  .name.offer{background:var(--sig-soft);color:#8a3e10;text-decoration:line-through;text-decoration-color:rgba(138,62,16,.45)}
+  .name.gat{background:#fde2e6;color:#a3263c;font-weight:600}
+  .name.chg::after{content:" •";color:var(--sig)}
+  .mini{border:0;border-radius:8px;padding:4px 9px;font-weight:600;font-size:.78rem;background:var(--navy);color:#fff;white-space:nowrap}
+  .mini.leave{background:#fff;color:var(--navy);border:1px solid var(--line)}
+  .mini.take{background:var(--sig)}
+  .mini.reset{background:none;color:var(--muted);border:1px dashed var(--line)}
+  .mini:disabled{opacity:.4;cursor:default}
+  .closed{padding:14px;border-top:1px dashed var(--line);color:var(--muted);font-size:.9rem}
+  .nodata{background:#fff;border:1px dashed var(--line);border-radius:var(--r);padding:24px;text-align:center;color:var(--muted)}
+  .lst{display:grid;gap:8px}
+  .item{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
+  .item b{font-family:Fraunces,serif}
+  .item .sub{color:var(--muted);font-size:.85rem}
+  .sec-h{margin:20px 0 10px;font-size:1.15rem}
+  .me-bar input{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;width:150px}
+  #codewrap{display:flex;gap:6px;align-items:center}
+  #codewrap[hidden]{display:none}
+  footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="hero">
+    <div class="kicker">Schippers · Haarlem</div>
+    <h1>Spaarneveer</h1>
+    <p>De gratis elektrische pont tussen de Spaarnelaan en de Belgiëlaan. Hier regel je je diensten, draag je een dienst over en lees je de afspraken.</p>
+    <div class="status" id="vaarstatus"><span class="dot"></span><span>Vaartijden: ma–vr 7.30–18.00 · za, zo &amp; feestdagen 9.00–18.00</span></div>
+  </div>
+  <svg class="waves" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 30 Q 75 10 150 30 T 300 30 T 450 30 T 600 30 T 750 30 T 900 30 T 1050 30 T 1200 30 V60 H0Z" fill="#1d4466" opacity=".7"/>
+    <path d="M0 42 Q 100 24 200 42 T 400 42 T 600 42 T 800 42 T 1000 42 T 1200 42 V60 H0Z" fill="#f6f8fa"/>
+  </svg>
+</header>
+
+<nav><div class="in" id="tabs">
+  <button data-t="rooster" class="on">Rooster</button>
+  <button data-t="mijn">Mijn diensten</button>
+  <button data-t="open">Open plekken <span id="openbadge"></span></button>
+  <button data-t="berichten">Mededelingen</button>
+  <button data-t="instructies">Afspraken</button>
+  <button data-t="contact">Contact</button>
+</div></nav>
+
+<main>
+  <div class="note warn" id="offline" hidden>Geen verbinding met de opslag. Het vaste rooster zie je wel; overdragen en overnemen kan even niet.</div>
+
+  <div class="me-bar">
+    <label for="ikben">Ik ben</label>
+    <select id="ikben"><option value="">— kies je naam —</option></select>
+    <span id="codewrap"><input id="codein" type="password" placeholder="Schipperscode" autocomplete="off"><button class="act" id="codeok">OK</button></span>
+    <span class="hint" id="ikbenhint"></span>
+  </div>
+
+  <section id="rooster" class="on">
+    <div class="weekbar">
+      <button class="pill" id="prev" aria-label="Vorige week">‹ Vorige</button>
+      <div style="text-align:center">
+        <h2 id="weektitle">Week</h2>
+        <div class="sub" id="weeksub"></div>
+      </div>
+      <button class="pill" id="next" aria-label="Volgende week">Volgende ›</button>
+    </div>
+    <div class="days" id="days"></div>
+    <div class="legend">
+      <span><span class="name me">Jij</span> jouw dienst</span>
+      <span><span class="name offer">Naam</span> ter overname</span>
+      <span><span class="name gat">open plek</span> schipper gezocht</span>
+      <span><span class="name chg">Naam</span> gewijzigd t.o.v. vaarrooster</span>
+    </div>
+    <div class="row" style="justify-content:flex-start;margin-top:14px;flex-wrap:wrap"><button class="pill" id="pdfbtn">⬇︎ PDF van deze week</button><button class="pill" id="xlsx">⬇︎ Heel rooster (.xlsx)</button></div>
+    <p class="empty" style="font-size:.8rem;margin-top:10px" id="bronregel"></p>
+  </section>
+
+  <section id="mijn">
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="card"><div class="big" id="mijnaantal">0</div><div class="empty">komende diensten</div></div>
+      <div class="card"><div class="big" id="mijnaangeboden">0</div><div class="empty">door jou ter overname aangeboden</div></div>
+    </div>
+    <h3 class="sec-h">Mijn komende diensten</h3>
+    <div class="lst" id="mijnlijst"></div>
+  </section>
+
+  <section id="open">
+    <div class="note">Open plekken en diensten die collega's willen overdragen, vanaf vandaag. Zonder 2 schippers vaart de pont niet.</div>
+    <div class="lst" id="openlijst"></div>
+  </section>
+
+  <section id="berichten">
+    <div class="card" id="postform" hidden style="margin-bottom:14px">
+      <h3>Nieuwe mededeling</h3>
+      <textarea id="posttext" rows="3" placeholder="Bijv. ‘Zaterdag geen vaart wegens onderhoud’"></textarea>
+      <div class="row"><button class="act" id="postsend">Plaatsen</button></div>
+    </div>
+    <div class="card"><h3>Mededelingen</h3><div id="posts"><p class="empty">Nog geen mededelingen.</p></div></div>
+  </section>
+
+  <section id="instructies">
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="card">
+        <h3>Vaste afspraken</h3>
+        <ul>
+          <li>Er varen <b>altijd 2 schippers</b> (a en b); om de beurt aan het roer.</li>
+          <li>Schippers hebben een <b>vaarbewijs 1</b>.</li>
+          <li>Maximaal <b>12 passagiers</b> per overtocht.</li>
+          <li>Officieel niet varen vanaf <b>windkracht 6</b>; de schippers beoordelen ter plekke of het veilig is.</li>
+          <li>Overtocht is gratis.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Diensttijden</h3>
+        <ul>
+          <li><b>Dienst 1</b> · ma–vr 7.30–11.00 · za/zo 9.00–12.00</li>
+          <li><b>Dienst 2</b> · ma–vr 11.00–14.30 · za/zo 12.00–15.00</li>
+          <li><b>Dienst 3</b> · ma–vr 14.30–18.00 · za/zo 15.00–18.00</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Kun je niet?</h3>
+        <ol>
+          <li>Tik bij je dienst op <b>Overdragen</b>.</li>
+          <li>De dienst komt bij iedereen onder <i>Open plekken</i>.</li>
+          <li>Een collega tikt op <b>Overnemen</b>; zijn naam komt dan in het rooster.</li>
+          <li>Tot dat gebeurt blijf jij ingeroosterd.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>Bij nood</h3>
+        <p style="margin:0">Bel <b>112</b> bij een persoon te water of letsel. Daarna de coördinator.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="card">
+      <h3>Contact</h3>
+      <p class="empty">Vul hier de gegevens van de coördinator(en) in.</p>
+      <ul>
+        <li><b>Coördinator rooster:</b> naam · telefoon</li>
+        <li><b>Technische storing pont:</b> naam · telefoon</li>
+        <li><b>Noodgeval:</b> 112</li>
+      </ul>
+      <h3 style="margin-top:16px">Links</h3>
+      <ul>
+        <li><a href="/">spaarneveer.nl</a> — publieke site</li>
+        <li><a href="https://spaarneveer.nl/vaart.html">Vaart de pont?</a> — actuele status</li>
+        <li><a href="https://spaarneveer.nl/nieuws.html">Nieuws</a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+<footer>Spaarneveer Haarlem · pagina voor schippers · <a href="#" id="beheerlink">Beheer</a></footer>
+<div class="toast" id="toast"></div>
+<script>
+/* Vaarrooster Spaarneveer — per datum: [1a,1b,2a,2b,3a,3b]. Lege string = open plek. */
+const ROOSTER_BRON = "Vaarrooster okt–dec 2026, bijgewerkt 28-sep-2026";
+const GEEN_VAART = {"2026-10-02":"Onderhoud","2026-10-03":"Onderhoud","2026-10-04":"Onderhoud","2026-12-25":"Eerste kerstdag — geen vaart"};
+const ROOSTER = {"2026-10-01":["Elja","Joost","Arnout","Jan O","Josh","Han"],"2026-10-02":["","","","","",""],"2026-10-03":["","","","","",""],"2026-10-04":["","","","","",""],"2026-10-05":["Pim","Paul2","Wim","Ton","Han","Henk S"],"2026-10-06":["Rob","Yvonne","Henk N","Hendrik","Joost","Tineke"],"2026-10-07":["Popko","Pim","Leon","Elja","Josh","Bram"],"2026-10-08":["Elja","Joost","Arnout","Jan O","Josh","Han"],"2026-10-09":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-10-10":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-10-11":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-10-12":["Gerard","Paul2","Wim","Ton","Han","Henk S"],"2026-10-13":["Rob","Yvonne","Henk N","Dick","Popko","Irma"],"2026-10-14":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-10-15":["Elja","Joost","Arnout","Jan O","Josh","Han"],"2026-10-16":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-10-17":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-10-18":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-10-19":["Pim","Paul2","Wim","Ton","Han","Henk S"],"2026-10-20":["Rob","Yvonne","Henk N","Dick","René","Arjen"],"2026-10-21":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-10-22":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-10-23":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-10-24":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-10-25":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-10-26":["Gerard","Paul2","Wim","Ton","Han","Henk S"],"2026-10-27":["Rob","Yvonne","Henk N","Dick","Popko","Irma"],"2026-10-28":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-10-29":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-10-30":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-10-31":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-11-01":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-11-02":["Pim","Paul2","Wim","Ton","Han","Henk S"],"2026-11-03":["Rob","Yvonne","Henk N","Dick","René","Arjen"],"2026-11-04":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-11-05":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-11-06":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-11-07":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-11-08":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-11-09":["Gerard","Paul2","Wim","Ton","Han","Henk S"],"2026-11-10":["Rob","Yvonne","Henk N","Dick","Popko","Irma"],"2026-11-11":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-11-12":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-11-13":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-11-14":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-11-15":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-11-16":["Pim","Paul2","Wim","Ton","Han","Henk S"],"2026-11-17":["Rob","Yvonne","Henk N","Dick","René","Arjen"],"2026-11-18":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-11-19":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-11-20":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-11-21":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-11-22":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-11-23":["Gerard","Paul2","Wim","Ton","Han","Henk S"],"2026-11-24":["Rob","Yvonne","Henk N","Dick","Popko","Irma"],"2026-11-25":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-11-26":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-11-27":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-11-28":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-11-29":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-11-30":["Pim","Paul2","Wim","Ton","Han","Henk S"],"2026-12-01":["Rob","Yvonne","Henk N","Dick","René","Arjen"],"2026-12-02":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-12-03":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-12-04":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-12-05":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-12-06":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-12-07":["Gerard","Paul2","Wim","Ton","Han","Henk S"],"2026-12-08":["Rob","Yvonne","Henk N","Dick","Popko","Irma"],"2026-12-09":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-12-10":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-12-11":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-12-12":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-12-13":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-12-14":["Pim","Paul2","Wim","Ton","Han","Henk S"],"2026-12-15":["Rob","Yvonne","Henk N","Dick","René","Arjen"],"2026-12-16":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-12-17":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-12-18":["Durk-J","Frank","Jan O","","Hendrik","Gerard"],"2026-12-19":["Paul2","Yvonne","Sander","Arnout","Doris","Leon"],"2026-12-20":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-12-21":["Gerard","Paul2","Wim","Ton","Han","Henk S"],"2026-12-22":["Rob","Yvonne","Henk N","Dick","Popko","Irma"],"2026-12-23":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-12-24":["Elja","René","Arnout","Jan O","Josh","Han"],"2026-12-25":["","","","","",""],"2026-12-26":["","Sander","Arnout","Doris","Leon",""],"2026-12-27":["Henk S","Bram","Paul","JeroenB","Pim","Tineke"],"2026-12-28":["Pim","Paul2","Wim","Ton","Han","Henk S"],"2026-12-29":["Rob","Yvonne","Henk N","Dick","René","Arjen"],"2026-12-30":["Popko","Dick","Leon","Elja","Josh","Bram"],"2026-12-31":["Elja","René","Arnout","Jan O","Josh","Han"]};
+
+</script>
+<script>
+/* ====== INSTELLING: plak hier de web-app-URL van het Google Apps Script ====== */
+const API_URL = "https://script.google.com/macros/s/AKfycbzMgjKmqP1Wl7fe6uBXDxTRuJCsBzSJgabODzEcf5fPklLqhLqwoP5eEgXX7psoyELI/exec";
+/* =========================================================================== */
+
+const POS = ["1a","1b","2a","2b","3a","3b"];
+const DIENSTEN = {
+  werkdag: [{n:1,van:"7.30",tot:"11.00"},{n:2,van:"11.00",tot:"14.30"},{n:3,van:"14.30",tot:"18.00"}],
+  weekend: [{n:1,van:"9.00",tot:"12.00"},{n:2,van:"12.00",tot:"15.00"},{n:3,van:"15.00",tot:"18.00"}]
+};
+const DAGNAMEN = ["zondag","maandag","dinsdag","woensdag","donderdag","vrijdag","zaterdag"];
+const MAANDEN = ["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
+const DATES = Object.keys(ROOSTER).sort();
+const NAMEN = [...new Set(Object.values(ROOSTER).flat().filter(Boolean))].sort((a,b)=>a.localeCompare(b,"nl"));
+
+/* ---------- state ---------- */
+const store = { get(k){ try{return localStorage.getItem(k)||"";}catch(e){return "";} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
+let myName = store.get("sv-naam"), code = store.get("sv-code"), isBeheer = store.get("sv-beheer")==="1";
+let online = false, wijz = {}, posts = [], weekOffset = 0;
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const today0 = () => { const d=new Date(); d.setHours(0,0,0,0); return d; };
+const fromIso = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+function monday(off){ const d=today0(); const w=(d.getDay()+6)%7; d.setDate(d.getDate()-w+off*7); return d; }
+function slotsFor(d){ const w=d.getDay(); return (w===0||w===6)?DIENSTEN.weekend:DIENSTEN.werkdag; }
+function weekNr(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-day); const y=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil(((t-y)/864e5+1)/7); }
+const fmtDate = d => d.getDate()+" "+MAANDEN[d.getMonth()];
+const dagNaam = d => DAGNAMEN[d.getDay()];
+const cap = s => s[0].toUpperCase()+s.slice(1);
+function base(ds,pos){ const r=ROOSTER[ds]; return r ? r[POS.indexOf(pos)] : ""; }
+function eff(ds,pos){ const w=wijz[ds+"_"+pos]; return w ? (w.naam||"") : base(ds,pos); }
+function offered(ds,pos){ const w=wijz[ds+"_"+pos]; return !!(w && w.aangeboden && w.naam); }
+function changed(ds,pos){ const w=wijz[ds+"_"+pos]; return !!(w && (w.naam||"")!==base(ds,pos)); }
+function geenVaart(ds){ const r=ROOSTER[ds]; if(!r) return null; if (GEEN_VAART[ds]) return GEEN_VAART[ds]; return r.every(x=>!x) ? "Geen vaart" : null; }
+function partner(pos){ return pos[0]+(pos[1]==="a"?"b":"a"); }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),3000); }
+function mini(label, cls, fn){ const b=document.createElement("button"); b.className="mini"+(cls?" "+cls:""); b.textContent=label; b.onclick=fn; return b; }
+const canAct = () => !!(online && myName && code);
+
+/* ---------- api ---------- */
+async function api(body){
+  if (!API_URL) throw new Error("geen API");
+  const r = body
+    ? await fetch(API_URL, {method:"POST", body: JSON.stringify(body)})   // text/plain: geen preflight
+    : await fetch(API_URL + "?t=" + Date.now());
+  return r.json();
+}
+function apply(data){
+  if (!data) return;
+  if (data.wijzigingen) wijz = data.wijzigingen;
+  if (data.berichten) posts = data.berichten;
+  renderAll(); renderPosts();
+}
+async function laad(){
+  if (!API_URL){ $("#offline").hidden=false; $("#offline").textContent="Overdragen en overnemen is nog niet gekoppeld (API_URL ontbreekt). Het vaste rooster zie je wel."; return; }
+  try{ const d=await api(); online=true; $("#offline").hidden=true; apply(d); }
+  catch(e){ online=false; $("#offline").hidden=false; renderAll(); }
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => show(b.dataset.t));
+function show(t){
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t===t));
+  document.querySelectorAll("main section").forEach(s => s.classList.toggle("on", s.id===t));
+  try{ history.replaceState(null,"","#"+t); }catch(e){}
+}
+if (location.hash && document.getElementById(location.hash.slice(1))) show(location.hash.slice(1));
+
+/* ---------- vaarstatus ---------- */
+(function(){
+  const n=new Date(), w=n.getDay(), h=n.getHours()+n.getMinutes()/60;
+  const open = (w===0||w===6) ? (h>=9&&h<18) : (h>=7.5&&h<18);
+  const el=$("#vaarstatus");
+  el.querySelector(".dot").classList.toggle("off",!open);
+  el.lastElementChild.textContent = (open?"Nu vaartijd · ":"Nu buiten vaartijd · ") + "ma–vr 7.30–18.00 · za, zo & feestdagen 9.00–18.00";
+})();
+$("#bronregel").textContent = "Bron: " + ROOSTER_BRON + ". Wijzigingen via deze pagina staan erbovenop.";
+
+/* ---------- wie ben ik + code ---------- */
+const sel = $("#ikben");
+NAMEN.forEach(n => { const o=document.createElement("option"); o.value=n; o.textContent=n; sel.append(o); });
+function applyName(){
+  sel.value = NAMEN.includes(myName) ? myName : "";
+  $("#codewrap").hidden = !!code;
+  $("#ikbenhint").hidden = !!(myName && code);
+  $("#ikbenhint").textContent = !myName ? "Kies je naam zoals die in het vaarrooster staat." : "Vul de schipperscode in om te kunnen overdragen en overnemen.";
+  $("#postform").hidden = !isBeheer;
+  $("#beheerlink").textContent = isBeheer ? "Beheer: aan (uitzetten)" : "Beheer";
+  renderAll(); renderPosts();
+}
+sel.onchange = () => { myName=sel.value; store.set("sv-naam",myName); applyName(); if (myName) toast("Hoi "+myName+"!"); };
+$("#codeok").onclick = async () => {
+  const c=$("#codein").value.trim(); if(!c) return;
+  try{
+    const r=await api({actie:"check", code:c});
+    if (!r.ok){ toast("Onjuiste code."); return; }
+    code=c; store.set("sv-code",c);
+    if (r.beheer){ isBeheer=true; store.set("sv-beheer","1"); }
+    applyName(); toast(r.beheer?"Beheercode geaccepteerd.":"Code klopt — je kunt nu overdragen en overnemen.");
+  }catch(e){ toast("Geen verbinding met de opslag."); }
+};
+$("#beheerlink").onclick = (e) => {
+  e.preventDefault();
+  if (isBeheer){ isBeheer=false; store.set("sv-beheer",""); code=""; store.set("sv-code",""); applyName(); toast("Beheer uitgezet. Vul je schipperscode opnieuw in."); return; }
+  code=""; store.set("sv-code",""); $("#codein").placeholder="Beheercode"; applyName(); $("#codein").focus();
+};
+
+/* ---------- rooster ---------- */
+$("#prev").onclick = () => { weekOffset--; renderWeek(); };
+$("#next").onclick = () => { weekOffset++; renderWeek(); };
+
+function posEl(ds, pos, past){
+  const wrap=document.createElement("div"); wrap.className="pos";
+  const l=document.createElement("span"); l.className="lbl"; l.textContent=pos[1]; wrap.append(l);
+  const n=eff(ds,pos), off=offered(ds,pos);
+  const tag=document.createElement("span");
+  if (!n){ tag.className="name gat"; tag.textContent="open plek"; }
+  else {
+    tag.className="name"+(n===myName?" me":"")+(off?" offer":"")+(changed(ds,pos)?" chg":"");
+    tag.textContent=n;
+    if (changed(ds,pos)) tag.title="Vaarrooster: "+(base(ds,pos)||"open plek");
+    if (off) tag.title="Ter overname aangeboden";
+  }
+  wrap.append(tag);
+  if (!past) actions(ds,pos).forEach(b=>wrap.append(b));
+  return wrap;
+}
+function actions(ds,pos){
+  const out=[], n=eff(ds,pos), off=offered(ds,pos);
+  if (canAct()){
+    if (n===myName) out.push(off ? mini("Intrekken","leave",()=>withdraw(ds,pos)) : mini("Overdragen","leave",()=>offer(ds,pos)));
+    else if (!n) out.push(mini("Invullen","take",()=>take(ds,pos)));
+    else if (off) out.push(mini("Overnemen","take",()=>take(ds,pos)));
+  }
+  if (isBeheer && online && code && wijz[ds+"_"+pos]) out.push(mini("↺","reset",()=>reset(ds,pos)));
+  return out;
+}
+
+function renderWeek(){
+  const m = monday(weekOffset), t0 = today0();
+  const end = new Date(m); end.setDate(m.getDate()+6);
+  $("#weektitle").textContent = "Week " + weekNr(m);
+  $("#weeksub").textContent = fmtDate(m) + " – " + fmtDate(end) + " " + end.getFullYear();
+  const wrap = $("#days"); wrap.innerHTML = "";
+  let any=false;
+  for (let i=0;i<7;i++){
+    const d = new Date(m); d.setDate(m.getDate()+i);
+    const ds = iso(d);
+    if (!ROOSTER[ds]) continue;
+    any=true;
+    const past = d < t0, isToday = +d === +t0;
+    const day = document.createElement("div");
+    day.className = "day" + (isToday?" today":"") + (past?" past":"");
+    const head = document.createElement("div"); head.className="dayhead";
+    const b=document.createElement("b"); b.textContent = cap(dagNaam(d));
+    const s=document.createElement("span"); s.textContent = isToday ? "vandaag · "+fmtDate(d) : fmtDate(d);
+    head.append(b,s); day.append(head);
+    const gv = geenVaart(ds);
+    if (gv){ const c=document.createElement("div"); c.className="closed"; c.textContent=gv; day.append(c); }
+    else slotsFor(d).forEach(sl => {
+      const row = document.createElement("div"); row.className="slot";
+      const t = document.createElement("div"); t.className="t";
+      t.append(document.createTextNode(sl.van+" – "+sl.tot));
+      const sm=document.createElement("small"); sm.textContent="Dienst "+sl.n; t.append(sm);
+      row.append(t, posEl(ds, sl.n+"a", past), posEl(ds, sl.n+"b", past));
+      day.append(row);
+    });
+    wrap.append(day);
+  }
+  if (!any){
+    const nd=document.createElement("div"); nd.className="nodata";
+    nd.textContent = "Voor deze week is nog geen vaarrooster ingeladen (beschikbaar: "+fmtDate(fromIso(DATES[0]))+" – "+fmtDate(fromIso(DATES[DATES.length-1]))+" "+DATES[DATES.length-1].slice(0,4)+").";
+    wrap.append(nd);
+  }
+}
+
+function slotInfo(ds,pos){ const d=fromIso(ds); const sl=slotsFor(d)[Number(pos[0])-1]; return {d, sl}; }
+function itemEl(ds,pos,sub){
+  const {d,sl}=slotInfo(ds,pos);
+  const r=document.createElement("div"); r.className="item";
+  const l=document.createElement("div");
+  const b=document.createElement("b"); b.textContent=cap(dagNaam(d))+" "+fmtDate(d);
+  const s=document.createElement("div"); s.className="sub"; s.textContent="Dienst "+sl.n+" · "+sl.van+" – "+sl.tot+(sub?" · "+sub:"");
+  l.append(b,s);
+  const box=document.createElement("div"); box.className="btns"; actions(ds,pos).forEach(x=>box.append(x));
+  r.append(l,box); return r;
+}
+function upcomingDates(){ const t=iso(today0()); return DATES.filter(ds=>ds>=t && !geenVaart(ds)); }
+
+function renderMine(){
+  const list=$("#mijnlijst"); list.innerHTML="";
+  let n=0, a=0;
+  if (!myName){ const p=document.createElement("p"); p.className="empty"; p.textContent="Kies bovenaan je naam om je diensten te zien."; list.append(p); }
+  else {
+    upcomingDates().forEach(ds => POS.forEach(pos => {
+      if (eff(ds,pos)!==myName) return;
+      n++; if (offered(ds,pos)) a++;
+      const mate = eff(ds,partner(pos));
+      list.append(itemEl(ds,pos,(mate?"met "+mate:"nog geen 2e schipper")+(offered(ds,pos)?" · ter overname":"")));
+    }));
+    if (!n){ const p=document.createElement("p"); p.className="empty"; p.textContent="Geen komende diensten in het huidige vaarrooster."; list.append(p); }
+  }
+  $("#mijnaantal").textContent=n; $("#mijnaangeboden").textContent=a;
+}
+
+function renderOpen(){
+  const list=$("#openlijst"); list.innerHTML=""; let n=0;
+  upcomingDates().forEach(ds => POS.forEach(pos => {
+    const nm=eff(ds,pos);
+    if (nm && !offered(ds,pos)) return;
+    n++;
+    const mate=eff(ds,partner(pos));
+    list.append(itemEl(ds,pos, nm ? nm+" zoekt vervanging" : "open plek"+(mate?" · met "+mate:"")));
+  }));
+  if (!n){ const p=document.createElement("p"); p.className="empty"; p.textContent="Alle diensten zijn bemand. 🎉"; list.append(p); }
+  $("#openbadge").textContent = n ? "("+n+")" : "";
+  if (!canAct() && n){ const p=document.createElement("p"); p.className="empty"; p.style.marginTop="8px"; p.textContent = !myName ? "Kies bovenaan je naam om een dienst over te nemen." : (!code ? "Vul bovenaan de schipperscode in om een dienst over te nemen." : "Geen verbinding met de opslag."); list.append(p); }
+}
+function renderAll(){ renderWeek(); renderMine(); renderOpen(); }
+
+/* ---------- schrijven ---------- */
+let busy=false;
+async function write(ds,pos,data,okMsg){
+  if (busy) return; busy=true;
+  const key=ds+"_"+pos, w=wijz[key];
+  const body = data===null ? {actie:"wis"} : {actie:"zet", naam:data.naam, aangeboden:!!data.aangeboden, vorige:data.vorige||""};
+  Object.assign(body, {code, sleutel:key, verwacht: w ? (w.naam||"") : null});
+  try{
+    const r = await api(body);
+    if (!r.ok){
+      toast(r.fout || "Opslaan lukte niet.");
+      if (/code/i.test(r.fout||"")){ code=""; store.set("sv-code",""); applyName(); }
+      apply(r);
+    } else { apply(r); if(okMsg) toast(okMsg); }
+  }catch(e){ toast("Geen verbinding. Probeer het opnieuw."); }
+  busy=false;
+}
+function offer(ds,pos){ write(ds,pos,{naam:myName, aangeboden:true, vorige:wijz[ds+"_"+pos]?.vorige||""}, "Aangeboden ter overname. Je blijft ingeroosterd tot iemand hem overneemt."); }
+function withdraw(ds,pos){
+  if (base(ds,pos)===myName) write(ds,pos,null,"Weer gewoon jouw dienst.");
+  else write(ds,pos,{...wijz[ds+"_"+pos], aangeboden:false}, "Weer gewoon jouw dienst.");
+}
+function take(ds,pos){
+  if (eff(ds,partner(pos))===myName){ toast("Je staat al op deze dienst."); return; }
+  const prev=eff(ds,pos);
+  write(ds,pos,{naam:myName, aangeboden:false, vorige:prev}, prev ? "Dienst van "+prev+" overgenomen — bedankt!" : "Open plek ingevuld — bedankt!");
+}
+function reset(ds,pos){ write(ds,pos,null,"Teruggezet naar het vaarrooster."); }
+
+/* ---------- mededelingen ---------- */
+function renderPosts(){
+  const w=$("#posts"); w.innerHTML="";
+  if (!posts.length){ const p=document.createElement("p"); p.className="empty"; p.textContent="Nog geen mededelingen."; w.append(p); return; }
+  posts.slice().sort((a,b)=>b.ts-a.ts).forEach(p=>{
+    const d=document.createElement("div"); d.className="post";
+    const m=document.createElement("div"); m.className="meta";
+    const dt=new Date(p.ts); m.textContent = cap(dagNaam(dt))+" "+fmtDate(dt)+" "+dt.getFullYear();
+    const t=document.createElement("p"); t.textContent=p.text;
+    d.append(m,t);
+    if (isBeheer && code){ const x=document.createElement("button"); x.className="pill"; x.style.marginTop="6px"; x.textContent="Verwijderen"; x.onclick=async()=>{ try{ const r=await api({actie:"wisbericht", code, id:p.id}); r.ok?apply(r):toast(r.fout||"Verwijderen lukte niet."); }catch(e){ toast("Geen verbinding."); } }; d.append(x); }
+    w.append(d);
+  });
+}
+$("#postsend").onclick = async () => {
+  const txt=$("#posttext").value.trim(); if(!txt) return;
+  try{ const r=await api({actie:"bericht", code, tekst:txt}); if(r.ok){ $("#posttext").value=""; apply(r); toast("Mededeling geplaatst."); } else toast(r.fout||"Plaatsen lukte niet."); }
+  catch(e){ toast("Geen verbinding."); }
+};
+
+
+/* ---------- Excel-download ---------- */
+function laadXLSX(){
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return new Promise((ok,nok)=>{ const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload=()=>ok(window.XLSX); s.onerror=nok; document.head.append(s); });
+}
+$("#xlsx").onclick = async () => {
+  let X; try{ X=await laadXLSX(); }catch(e){ toast("Downloaden lukte niet (geen verbinding)."); return; }
+  const cel = (ds,pos) => { const n=eff(ds,pos); return !n ? "OPEN" : n + (offered(ds,pos) ? " (ter overname)" : ""); };
+  const rows=[["Datum","Dag","Dienst 1 a","Dienst 1 b","Dienst 2 a","Dienst 2 b","Dienst 3 a","Dienst 3 b","Opmerking"]];
+  const lijst=[["Datum","Dag","Dienst","Tijd","Plek","Vaarrooster","Nu ingeroosterd","Ter overname"]];
+  DATES.forEach(ds=>{
+    const d=fromIso(ds), gv=geenVaart(ds);
+    rows.push(gv ? [d, cap(dagNaam(d)),"","","","","","",gv] : [d, cap(dagNaam(d)), ...POS.map(p=>cel(ds,p)), ""]);
+    if (!gv) POS.forEach(pos=>{
+      if (!changed(ds,pos) && !offered(ds,pos)) return;
+      const sl=slotsFor(d)[Number(pos[0])-1];
+      lijst.push([d, cap(dagNaam(d)), "Dienst "+sl.n, sl.van+"–"+sl.tot, pos[1], base(ds,pos)||"open", eff(ds,pos)||"open", offered(ds,pos)?"ja":""]);
+    });
+  });
+  const wb=X.utils.book_new();
+  const ws1=X.utils.aoa_to_sheet(rows,{cellDates:true,dateNF:"dd-mm-yyyy"});
+  ws1["!cols"]=[{wch:11},{wch:10},...Array(6).fill({wch:20}),{wch:28}];
+  ws1["!freeze"]={xSplit:2,ySplit:1};
+  const ws2=X.utils.aoa_to_sheet(lijst,{cellDates:true,dateNF:"dd-mm-yyyy"});
+  ws2["!cols"]=[{wch:11},{wch:10},{wch:9},{wch:12},{wch:5},{wch:16},{wch:18},{wch:12}];
+  X.utils.book_append_sheet(wb,ws1,"Rooster");
+  X.utils.book_append_sheet(wb,ws2,"Wijzigingen");
+  const stamp=iso(new Date());
+  X.writeFile(wb,"Spaarneveer-rooster-"+stamp+".xlsx");
+  toast(online ? "Rooster gedownload, inclusief alle wijzigingen." : "Gedownload — let op: zonder verbinding zitten de wijzigingen er niet in.");
+};
+
+/* ---------- PDF per week ---------- */
+function laadScript(src){ return new Promise((ok,nok)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=nok; document.head.append(s); }); }
+async function laadPdfLib(){
+  if (!window.jspdf) await laadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  if (!window.jspdf.jsPDF.API.autoTable) await laadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js");
+  return window.jspdf.jsPDF;
+}
+async function weekPdf(){
+  const btn=$("#pdfbtn"); btn.disabled=true; const old=btn.textContent; btn.textContent="PDF maken…";
+  try{
+    const jsPDF = await laadPdfLib();
+    const m = monday(weekOffset), days=[];
+    for (let i=0;i<7;i++){ const d=new Date(m); d.setDate(m.getDate()+i); days.push(d); }
+    const end=days[6];
+    const doc = new jsPDF({orientation:"landscape", unit:"mm", format:"a4"});
+    doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.setTextColor(18,48,74);
+    doc.text("Vaarrooster Spaarneveer", 14, 16);
+    doc.setFont("helvetica","normal"); doc.setFontSize(11); doc.setTextColor(93,108,120);
+    doc.text("Week "+weekNr(m)+"  ·  "+fmtDate(m)+" - "+fmtDate(end)+" "+end.getFullYear(), 14, 23);
+    const head=[["", ...days.map(d=>cap(dagNaam(d))+"\n"+fmtDate(d))]];
+    const body=[], meta=[];
+    POS.forEach(pos=>{
+      const row=[{content:"Dienst "+pos, styles:{fontStyle:"bold"}}], mr=[null];
+      days.forEach(d=>{
+        const ds=iso(d);
+        if (!ROOSTER[ds]){ row.push("-"); mr.push("leeg"); return; }
+        if (geenVaart(ds)){ row.push(pos==="1a"?geenVaart(ds):""); mr.push("dicht"); return; }
+        const n=eff(ds,pos);
+        if (!n){ row.push("OPEN"); mr.push("open"); }
+        else if (offered(ds,pos)){ row.push(n+"\n(ter overname)"); mr.push("offer"); }
+        else { row.push(n+(changed(ds,pos)?" *":"")); mr.push(changed(ds,pos)?"chg":""); }
+      });
+      body.push(row); meta.push(mr);
+    });
+    doc.autoTable({
+      head, body, startY:29, theme:"grid",
+      styles:{fontSize:10, cellPadding:2.4, valign:"middle", halign:"center", lineColor:[217,226,232], lineWidth:.2},
+      headStyles:{fillColor:[18,48,74], textColor:255, fontStyle:"bold"},
+      columnStyles:{0:{halign:"left", cellWidth:24, fillColor:[232,240,245]}},
+      didParseCell(data){
+        if (data.section!=="body" || data.column.index===0) return;
+        const k=meta[data.row.index][data.column.index];
+        if (k==="open"){ data.cell.styles.fillColor=[253,226,230]; data.cell.styles.textColor=[163,38,60]; data.cell.styles.fontStyle="bold"; }
+        if (k==="offer"){ data.cell.styles.fillColor=[253,233,220]; data.cell.styles.textColor=[138,62,16]; }
+        if (k==="chg"){ data.cell.styles.textColor=[47,125,91]; data.cell.styles.fontStyle="bold"; }
+        if (k==="dicht"||k==="leeg"){ data.cell.styles.fillColor=[240,242,244]; data.cell.styles.textColor=[120,130,140]; }
+        if (data.row.index%2===1) data.cell.styles.lineWidth={bottom:.6,top:.2,left:.2,right:.2};
+      }
+    });
+    let y = doc.lastAutoTable.finalY + 8;
+    doc.setFontSize(9); doc.setTextColor(93,108,120);
+    doc.text("Diensttijden  ma-vr: 1 = 7.30-11.00  ·  2 = 11.00-14.30  ·  3 = 14.30-18.00      za/zo: 1 = 9.00-12.00  ·  2 = 12.00-15.00  ·  3 = 15.00-18.00", 14, y);
+    doc.text("* = gewijzigd t.o.v. vaarrooster   ·   OPEN = schipper gezocht   ·   altijd 2 schippers (a en b) aan boord", 14, y+5);
+    const nu=new Date();
+    doc.text("Gemaakt "+nu.getDate()+" "+MAANDEN[nu.getMonth()]+" "+nu.getFullYear()+" "+pad(nu.getHours())+":"+pad(nu.getMinutes())+"  ·  bron: "+ROOSTER_BRON.replace("–","-"), 14, y+10);
+    doc.save("Spaarneveer-week-"+weekNr(m)+"-"+m.getFullYear()+".pdf");
+    toast("PDF gedownload.");
+  }catch(e){
+    toast("PDF maken lukte niet.");
+  }
+  btn.disabled=false; btn.textContent=old;
+}
+$("#pdfbtn").onclick = weekPdf;
+
+/* ---------- start ---------- */
+applyName();
+laad();
+setInterval(laad, 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) laad(); });
+</script>
+</body>
+</html>
