@@ -623,6 +623,186 @@ async function weekPdf(){
 }
 $("#pdfbtn").onclick = weekPdf;
 
+/* ---------- Roostermaker (beheer) + rooster uit de Sheet ---------- */
+function mergeRooster(r){
+  if (!r) return;
+  Object.keys(r).forEach(ds => {
+    const v = r[ds]; if (!v || !Array.isArray(v.p)) return;
+    ROOSTER[ds] = v.p.slice(0,6).map(x => x || "");
+    if (v.opm) GEEN_VAART[ds] = v.opm; else delete GEEN_VAART[ds];
+  });
+  DATES.splice(0, DATES.length, ...Object.keys(ROOSTER).sort());
+  const nn = [...new Set(Object.values(ROOSTER).flat().filter(Boolean))].sort((a,b)=>a.localeCompare(b,"nl"));
+  NAMEN.splice(0, NAMEN.length, ...nn);
+  const cur = sel.value;
+  sel.querySelectorAll("option:not([value=''])").forEach(o => o.remove());
+  NAMEN.forEach(n => { const o=document.createElement("option"); o.value=n; o.textContent=n; sel.append(o); });
+  sel.value = NAMEN.includes(cur) ? cur : (NAMEN.includes(myName) ? myName : "");
+}
+const _applyOrig = apply;
+apply = function(data){ if (data && data.rooster) mergeRooster(data.rooster); _applyOrig(data); };
+
+/* tab + sectie aanmaken */
+(function(){
+  const b=document.createElement("button"); b.dataset.t="maker"; b.id="makertab"; b.hidden=true; b.textContent="Rooster maken";
+  b.onclick=()=>{ show("maker"); renderMaker(); };
+  $("#tabs").append(b);
+  const s=document.createElement("section"); s.id="maker";
+  s.innerHTML = "\n" +
+    "    <div class=\"note\">Alleen zichtbaar voor beheer. Maak een concept op basis van het patroon van de laatste twee weken, pas namen aan en sla op. Het rooster wordt direct voor iedereen bijgewerkt.</div>\n" +
+    "    <div class=\"card\" style=\"margin-bottom:14px\">\n" +
+    "      <h3>Periode</h3>\n" +
+    "      <div style=\"display:flex;gap:10px;flex-wrap:wrap;align-items:end\">\n" +
+    "        <label style=\"display:grid;gap:4px;font-size:.85rem;color:var(--muted)\">Van<input type=\"date\" id=\"mkvan\" style=\"font:inherit;padding:8px;border:1px solid var(--line);border-radius:10px\"></label>\n" +
+    "        <label style=\"display:grid;gap:4px;font-size:.85rem;color:var(--muted)\">Tot en met<input type=\"date\" id=\"mktot\" style=\"font:inherit;padding:8px;border:1px solid var(--line);border-radius:10px\"></label>\n" +
+    "      </div>\n" +
+    "      <div class=\"row\" style=\"justify-content:flex-start;flex-wrap:wrap\">\n" +
+    "        <button class=\"act\" id=\"mkconcept\">Nieuw concept (patroon laatste 2 weken)</button>\n" +
+    "        <button class=\"pill\" id=\"mkladen\">Bestaand rooster bewerken</button>\n" +
+    "      </div>\n" +
+    "      <p class=\"empty\" id=\"mkinfo\" style=\"margin:8px 0 0;font-size:.85rem\"></p>\n" +
+    "    </div>\n" +
+    "    <div id=\"mkedit\"></div>\n";
+  $("main").append(s);
+  $("#mkconcept").onclick = maakConcept;
+  $("#mkladen").onclick = laadBestaand;
+})();
+const _applyNameOrig = applyName;
+applyName = function(){ _applyNameOrig(); const t=$("#makertab"); if (t) t.hidden = !isBeheer; if (!isBeheer && $("#maker").classList.contains("on")) show("rooster"); };
+
+let concept = null, mkWeek = 0, mkNieuw = [];
+const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+function standaardPeriode(){
+  const laatste = fromIso(DATES[DATES.length-1]);
+  const van = addDays(laatste,1);
+  const kw = Math.floor(van.getMonth()/3);
+  const tot = new Date(van.getFullYear(), kw*3+3, 0);
+  $("#mkvan").value = iso(van); $("#mktot").value = iso(tot);
+}
+function renderMaker(){
+  if (!$("#mkvan").value) standaardPeriode();
+  $("#mkinfo").textContent = "Huidig rooster loopt van "+fmtDate(fromIso(DATES[0]))+" t/m "+fmtDate(fromIso(DATES[DATES.length-1]))+" "+DATES[DATES.length-1].slice(0,4)+".";
+  renderEditor();
+}
+function periode(){
+  const v=$("#mkvan").value, t=$("#mktot").value;
+  if (!v || !t || t<v){ toast("Kies een geldige periode."); return null; }
+  const out=[]; for (let d=fromIso(v); iso(d)<=t; d=addDays(d,1)) out.push(iso(d));
+  if (out.length>200){ toast("Kies maximaal 200 dagen tegelijk."); return null; }
+  return out;
+}
+function patroonBron(ds){
+  // zelfde weekdag én zelfde week-pariteit (2-wekelijks patroon), meest recente 'volle' dag
+  const t=fromIso(ds).getTime(), kandidaten=[];
+  DATES.forEach(s => {
+    if (s>=ds || GEEN_VAART[s]) return;
+    const diff=Math.round((t-fromIso(s).getTime())/864e5);
+    if (diff%14===0) kandidaten.push(s);
+  });
+  kandidaten.sort().reverse();
+  return kandidaten.find(s => ROOSTER[s].every(Boolean)) || kandidaten.find(s => ROOSTER[s].some(Boolean)) || null;
+}
+function maakConcept(){
+  const dagen=periode(); if(!dagen) return;
+  const bestaand = dagen.filter(ds=>ROOSTER[ds] && ROOSTER[ds].some(Boolean));
+  concept={};
+  dagen.forEach(ds => { const b=patroonBron(ds); concept[ds]={p: b ? ROOSTER[b].slice() : ["","","","","",""], opm:""}; });
+  mkWeek=0; renderEditor();
+  toast(bestaand.length ? "Let op: "+bestaand.length+" dag(en) in deze periode hebben al een rooster; opslaan overschrijft die." : "Concept gemaakt. Controleer en pas aan, dan Opslaan.");
+}
+function laadBestaand(){
+  const dagen=periode(); if(!dagen) return;
+  concept={};
+  dagen.forEach(ds => { concept[ds]={p: ROOSTER[ds] ? ROOSTER[ds].slice() : ["","","","","",""], opm: GEEN_VAART[ds]||""}; });
+  mkWeek=0; renderEditor(); toast("Bestaand rooster geladen.");
+}
+function alleNamen(){ return [...new Set([...NAMEN, ...mkNieuw])].sort((a,b)=>a.localeCompare(b,"nl")); }
+function renderEditor(){
+  const box=$("#mkedit"); box.innerHTML="";
+  if (!concept) return;
+  const dagen=Object.keys(concept).sort();
+  const weken=[]; dagen.forEach(ds=>{ const d=fromIso(ds); const k=iso(addDays(d,-((d.getDay()+6)%7))); let wk=weken.find(x=>x.k===k); if(!wk){ wk={k:k,d:[]}; weken.push(wk); } wk.d.push(ds); });
+  mkWeek=Math.max(0,Math.min(mkWeek,weken.length-1));
+  const wk=weken[mkWeek];
+  const bar=document.createElement("div"); bar.className="weekbar";
+  const p=document.createElement("button"); p.className="pill"; p.textContent="‹ Vorige"; p.disabled=mkWeek===0; p.onclick=()=>{mkWeek--;renderEditor();};
+  const n=document.createElement("button"); n.className="pill"; n.textContent="Volgende ›"; n.disabled=mkWeek===weken.length-1; n.onclick=()=>{mkWeek++;renderEditor();};
+  const mid=document.createElement("div"); mid.style.textAlign="center";
+  const h=document.createElement("h2"); h.textContent="Concept week "+weekNr(fromIso(wk.k));
+  const sub=document.createElement("div"); sub.className="sub"; sub.textContent=(mkWeek+1)+" van "+weken.length+" weken";
+  mid.append(h,sub); bar.append(p,mid,n); box.append(bar);
+  const namen=alleNamen();
+  const grid=document.createElement("div"); grid.className="days";
+  wk.d.forEach(ds=>{
+    const d=fromIso(ds), c=concept[ds];
+    const day=document.createElement("div"); day.className="day";
+    const head=document.createElement("div"); head.className="dayhead";
+    const b=document.createElement("b"); b.textContent=cap(dagNaam(d));
+    const s=document.createElement("span"); s.textContent=fmtDate(d);
+    head.append(b,s); day.append(head);
+    const opm=document.createElement("div"); opm.className="slot";
+    const oi=document.createElement("input"); oi.type="text"; oi.placeholder="Geen vaart? Reden (bijv. Onderhoud)"; oi.value=c.opm||"";
+    oi.style.cssText="padding:6px 10px;font-size:.85rem";
+    oi.oninput=()=>{ c.opm=oi.value.trim(); };
+    opm.append(oi); day.append(opm);
+    slotsFor(d).forEach(sl=>{
+      const row=document.createElement("div"); row.className="slot";
+      const t=document.createElement("div"); t.className="t"; t.append(document.createTextNode(sl.van+" – "+sl.tot));
+      const sm=document.createElement("small"); sm.textContent="Dienst "+sl.n; t.append(sm); row.append(t);
+      ["a","b"].forEach(ab=>{
+        const i=POS.indexOf(sl.n+ab);
+        const wrap=document.createElement("div"); wrap.className="pos";
+        const l=document.createElement("span"); l.className="lbl"; l.textContent=ab;
+        const se=document.createElement("select"); se.style.cssText="font:inherit;font-size:.85rem;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;flex:1;min-width:0";
+        const o0=document.createElement("option"); o0.value=""; o0.textContent="— open —"; se.append(o0);
+        namen.forEach(nm=>{ const o=document.createElement("option"); o.value=nm; o.textContent=nm; se.append(o); });
+        const on=document.createElement("option"); on.value="__nieuw"; on.textContent="+ nieuwe naam…"; se.append(on);
+        se.value=c.p[i]||"";
+        if (!c.p[i]) se.style.background="#fde2e6";
+        se.onchange=()=>{
+          if (se.value==="__nieuw"){ se.value=c.p[i]||""; vraagNaam(nm=>{ if(!nm) return; mkNieuw.push(nm); c.p[i]=nm; renderEditor(); }); return; }
+          c.p[i]=se.value; se.style.background = se.value ? "#fff" : "#fde2e6";
+        };
+        wrap.append(l,se); row.append(wrap);
+      });
+      day.append(row);
+    });
+    grid.append(day);
+  });
+  box.append(grid);
+  const open = Object.values(concept).filter(c=>!c.opm).reduce((a,c)=>a+c.p.filter(x=>!x).length,0);
+  const act=document.createElement("div"); act.className="card"; act.style.marginTop="14px";
+  const info=document.createElement("p"); info.className="empty"; info.style.margin="0 0 10px";
+  info.textContent=Object.keys(concept).length+" dagen in concept · "+open+" open plek(ken).";
+  const save=document.createElement("button"); save.className="act"; save.textContent="Opslaan in rooster"; save.onclick=slaOp;
+  const weg=document.createElement("button"); weg.className="pill"; weg.style.marginLeft="8px"; weg.textContent="Concept weggooien"; weg.onclick=()=>{ concept=null; renderEditor(); };
+  act.append(info,save,weg); box.append(act);
+}
+function vraagNaam(cb){
+  const ov=document.createElement("div"); ov.style.cssText="position:fixed;inset:0;background:rgba(18,48,74,.35);display:grid;place-items:center;z-index:30;padding:16px";
+  const c=document.createElement("div"); c.className="card"; c.style.cssText="max-width:340px;width:100%";
+  const h=document.createElement("h3"); h.textContent="Nieuwe schipper";
+  const i=document.createElement("input"); i.type="text"; i.placeholder="Naam zoals in het rooster"; i.maxLength=40;
+  const r=document.createElement("div"); r.className="row";
+  const a=document.createElement("button"); a.className="pill"; a.textContent="Annuleren"; a.onclick=()=>{ ov.remove(); cb(null); };
+  const o=document.createElement("button"); o.className="act"; o.textContent="Toevoegen"; o.onclick=()=>{ const v=i.value.trim(); ov.remove(); cb(v||null); };
+  i.onkeydown=e=>{ if(e.key==="Enter") o.click(); };
+  r.append(a,o); c.append(h,i,r); ov.append(c); document.body.append(ov); i.focus();
+}
+let mkBusy=false;
+async function slaOp(){
+  if (!concept || mkBusy) return;
+  if (!(isBeheer && code && online)){ toast("Log in als beheerder en zorg voor verbinding."); return; }
+  mkBusy=true;
+  const dagen={}; Object.keys(concept).forEach(ds=>{ dagen[ds]={p:concept[ds].p, opm:concept[ds].opm||""}; });
+  try{
+    const r=await api({actie:"rooster", code, dagen});
+    if (r.ok){ apply(r); toast("Rooster opgeslagen: "+Object.keys(dagen).length+" dagen."); concept=null; renderMaker(); }
+    else toast(r.fout||"Opslaan lukte niet.");
+  }catch(e){ toast("Geen verbinding. Probeer het opnieuw."); }
+  mkBusy=false;
+}
+
 /* ---------- start ---------- */
 applyName();
 laad();
