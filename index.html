@@ -914,47 +914,81 @@ if (FOCUS) setTimeout(scrollFocus, 300);
 })();
 const _applyNameMaand = applyName;
 applyName = function(){ _applyNameMaand(); const b = $("#maandxlsx"); if (b) b.hidden = !isBeheer; };
-const VERGOEDING = 16;   // euro per dienst
+const VERGOEDING = 16;          // euro per dienst
+const MAX_PER_JAAR = 1760.83;   // maximale onbelaste vrijwilligersvergoeding per kalenderjaar
 const MAANDNAMEN = ["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+function laadExcelJS(){
+  if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+  return new Promise((ok, nok) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"; s.onload = () => ok(window.ExcelJS); s.onerror = nok; document.head.append(s); });
+}
 async function maandOverzicht(){
-  let X; try{ X = await laadXLSX(); }catch(e){ toast("Downloaden lukte niet (geen verbinding)."); return; }
+  let EJ; try{ EJ = await laadExcelJS(); }catch(e){ toast("Downloaden lukte niet (geen verbinding)."); return; }
   const t = iso(today0());
-  const telling = {}, maanden = [], details = [];
+  const telling = {}, maanden = [], jaren = [], details = [];
   DATES.forEach(ds => {
     if (ds >= t || geenVaart(ds)) return;
-    const d = fromIso(ds), ym = ds.slice(0,7);
+    const d = fromIso(ds), ym = ds.slice(0,7), y = ds.slice(0,4);
     POS.forEach(pos => {
       const n = eff(ds, pos); if (!n) return;
       if (maanden.indexOf(ym) < 0) maanden.push(ym);
+      if (jaren.indexOf(y) < 0) jaren.push(y);
       telling[n] = telling[n] || {}; telling[n][ym] = (telling[n][ym] || 0) + 1;
       const sl = slotsFor(d)[Number(pos[0]) - 1];
       details.push([n, d, cap(dagNaam(d)), "Dienst " + sl.n, sl.van + "–" + sl.tot, pos[1], VERGOEDING, changed(ds, pos) ? "overgenomen/ingevuld" : ""]);
     });
   });
   if (!details.length){ toast("Nog geen gevaren diensten om te tellen."); return; }
-  maanden.sort();
-  const kop = ["Schipper"].concat(maanden.map(ym => MAANDNAMEN[Number(ym.slice(5)) - 1] + " " + ym.slice(0,4)), ["Totaal diensten", "Vergoeding (€)"]);
+  maanden.sort(); jaren.sort();
   const namen = Object.keys(telling).sort((a,b) => a.localeCompare(b, "nl"));
-  const rijen = [kop];
-  namen.forEach(n => { const r = [n]; let tot = 0; maanden.forEach(ym => { const c = telling[n][ym] || 0; r.push(c); tot += c; }); r.push(tot); r.push(tot * VERGOEDING); rijen.push(r); });
-  const somRij = ["Totaal"]; let alles = 0;
-  maanden.forEach(ym => { const s = namen.reduce((a,n) => a + (telling[n][ym] || 0), 0); somRij.push(s); alles += s; });
-  somRij.push(alles); somRij.push(alles * VERGOEDING); rijen.push(somRij);
-  rijen.push([]); rijen.push(["Gevaren diensten t/m " + fmtDate(addDays(today0(), -1)) + " " + addDays(today0(), -1).getFullYear() + ", volgens rooster inclusief overnames, à € " + VERGOEDING + " per dienst. Afwezigheid zonder overdracht is niet bekend."]);
+  const jaarBedrag = (n, y) => maanden.filter(ym => ym.startsWith(y)).reduce((a, ym) => a + (telling[n][ym] || 0), 0) * VERGOEDING;
+
+  const wb = new EJ.Workbook();
+  const ws = wb.addWorksheet("Per maand", {views: [{state: "frozen", xSplit: 1, ySplit: 1}]});
+  const kop = ["Schipper"].concat(maanden.map(ym => MAANDNAMEN[Number(ym.slice(5)) - 1] + " " + ym.slice(0,4)), ["Totaal diensten", "Vergoeding (€)"], jaren.map(y => "Vergoeding " + y + " (€)"));
+  ws.addRow(kop).font = {bold: true};
+  const EURO = "€ #,##0.00", ROOD = "FFC00000", ROODVLAK = "FFFDE2E6";
+  const eersteJaarKol = maanden.length + 4;
+  let teVeel = 0;
+  namen.forEach(n => {
+    let tot = 0; const r = [n];
+    maanden.forEach(ym => { const c = telling[n][ym] || 0; r.push(c); tot += c; });
+    r.push(tot, tot * VERGOEDING);
+    jaren.forEach(y => r.push(jaarBedrag(n, y)));
+    const row = ws.addRow(r);
+    row.getCell(maanden.length + 3).numFmt = EURO;
+    let over = false;
+    jaren.forEach((y, i) => {
+      const cel = row.getCell(eersteJaarKol + i); cel.numFmt = EURO;
+      if (jaarBedrag(n, y) > MAX_PER_JAAR){ over = true; cel.font = {bold: true, color: {argb: ROOD}}; cel.fill = {type: "pattern", pattern: "solid", fgColor: {argb: ROODVLAK}}; }
+    });
+    if (over){ teVeel++; const c = row.getCell(1); c.font = {bold: true, color: {argb: ROOD}}; c.fill = {type: "pattern", pattern: "solid", fgColor: {argb: ROODVLAK}}; }
+  });
+  const som = ["Totaal"]; let alles = 0;
+  maanden.forEach(ym => { const s = namen.reduce((a, n) => a + (telling[n][ym] || 0), 0); som.push(s); alles += s; });
+  som.push(alles, alles * VERGOEDING);
+  jaren.forEach(y => som.push(namen.reduce((a, n) => a + jaarBedrag(n, y), 0)));
+  const sr = ws.addRow(som); sr.font = {bold: true};
+  for (let c = maanden.length + 3; c <= kop.length; c++) sr.getCell(c).numFmt = EURO;
+  ws.addRow([]);
+  const vanaf = fmtDate(fromIso(DATES[0])) + " " + DATES[0].slice(0,4);
+  ws.addRow(["Gevaren diensten van " + vanaf + " t/m " + fmtDate(addDays(today0(), -1)) + " " + addDays(today0(), -1).getFullYear() + ", volgens rooster inclusief overnames, à € " + VERGOEDING + " per dienst."]);
+  const lr = ws.addRow(["Rood = boven de maximale onbelaste vergoeding van € " + MAX_PER_JAAR.toFixed(2).replace(".", ",") + " per kalenderjaar." + (teVeel ? " (" + teVeel + " schipper(s))" : " Niemand komt erboven.")]);
+  lr.getCell(1).font = {color: {argb: ROOD}};
+  ws.addRow(["Let op: diensten vóór " + vanaf + " (vóór dit systeem) tellen niet mee in het jaartotaal. Afwezigheid zonder overdracht is niet bekend."]);
+  ws.getColumn(1).width = 16;
+  for (let c = 2; c <= kop.length; c++) ws.getColumn(c).width = c <= maanden.length + 1 ? 14 : 18;
+
+  const wd = wb.addWorksheet("Alle diensten", {views: [{state: "frozen", ySplit: 1}]});
+  wd.addRow(["Schipper","Datum","Dag","Dienst","Tijd","Plek","Vergoeding (€)","Opmerking"]).font = {bold: true};
   details.sort((a,b) => a[0].localeCompare(b[0], "nl") || a[1] - b[1]);
-  const det = [["Schipper","Datum","Dag","Dienst","Tijd","Plek","Vergoeding (€)","Opmerking"]].concat(details);
-  const wb = X.utils.book_new();
-  const ws1 = X.utils.aoa_to_sheet(rijen);
-  ws1["!cols"] = [{wch:16}].concat(maanden.map(() => ({wch:14})), [{wch:15},{wch:15}]);
-  const bc = maanden.length + 2;
-  for (let i = 1; i <= namen.length + 1; i++){ const c = ws1[X.utils.encode_cell({r:i, c:bc})]; if (c){ c.z = "€ #,##0.00"; } }
-  const ws2 = X.utils.aoa_to_sheet(det, {cellDates:true, dateNF:"dd-mm-yyyy"});
-  ws2["!cols"] = [{wch:16},{wch:11},{wch:10},{wch:9},{wch:12},{wch:5},{wch:14},{wch:20}];
-  for (let i = 1; i <= details.length; i++){ const c = ws2[X.utils.encode_cell({r:i, c:6})]; if (c){ c.z = "€ #,##0.00"; } }
-  X.utils.book_append_sheet(wb, ws1, "Per maand");
-  X.utils.book_append_sheet(wb, ws2, "Alle diensten");
-  X.writeFile(wb, "Spaarneveer-diensten-per-schipper-" + t + ".xlsx");
-  toast(online ? "Overzicht gedownload." : "Gedownload – let op: zonder verbinding zitten overnames er niet in.");
+  details.forEach(r => { const row = wd.addRow(r); row.getCell(2).numFmt = "dd-mm-yyyy"; row.getCell(7).numFmt = EURO; });
+  [16,11,10,9,12,5,14,20].forEach((w, i) => wd.getColumn(i + 1).width = w);
+
+  const buf = await wb.xlsx.writeBuffer();
+  const url = URL.createObjectURL(new Blob([buf], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+  const a = document.createElement("a"); a.href = url; a.download = "Spaarneveer-diensten-per-schipper-" + t + ".xlsx";
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast(online ? (teVeel ? "Overzicht gedownload – " + teVeel + " schipper(s) boven het maximum (rood)." : "Overzicht gedownload.") : "Gedownload – let op: zonder verbinding zitten overnames er niet in.");
 }
 
 /* ---------- start ---------- */
