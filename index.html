@@ -1115,6 +1115,55 @@ async function passXlsx(){
   toast("Passagiersoverzicht gedownload.");
 }
 
+/* ---------- Beheer: dienst wijzigen zonder e-mail ---------- */
+(function(){
+  const st = document.createElement("style");
+  st.textContent = ".mini.edit{background:#eef3f8;color:var(--navy);border-color:var(--line)} .pos select.beheersel{font:inherit;font-size:.8rem;padding:3px 6px;border:1px solid var(--line);border-radius:8px;max-width:150px}";
+  document.head.append(st);
+})();
+function beheerZet(ds, pos, nieuw){
+  const huidig = eff(ds, pos);
+  if (nieuw === huidig){ renderAll(); return; }
+  if (nieuw && eff(ds, partner(pos)) === nieuw){ toast(nieuw + " staat al op deze dienst."); renderAll(); return; }
+  const msg = "Gewijzigd zonder e-mail: " + (nieuw || "open plek") + ".";
+  if (nieuw === base(ds, pos)) write(ds, pos, null, msg);
+  else write(ds, pos, {naam: nieuw, aangeboden: false, vorige: huidig, stil: true}, msg);
+}
+const _writeStil = write;
+write = function(ds, pos, data, okMsg){
+  if (data && data.stil){
+    // zelfde als write(), maar met stil:true zodat de server geen mail verstuurt
+    if (busy) return; busy = true;
+    const key = ds + "_" + pos, w = wijz[key];
+    const body = {actie: "zet", naam: data.naam, aangeboden: false, vorige: data.vorige || "", stil: true, code, sleutel: key, verwacht: w ? (w.naam || "") : null};
+    return api(body).then(r => {
+      if (!r.ok) toast(r.fout || "Opslaan lukte niet.");
+      else if (okMsg) toast(okMsg);
+      apply(r);
+    }).catch(() => toast("Geen verbinding. Probeer het opnieuw.")).finally(() => { busy = false; });
+  }
+  return _writeStil(ds, pos, data, okMsg);
+};
+const _posElStil = posEl;
+posEl = function(ds, pos, past){
+  const el = _posElStil(ds, pos, past);
+  if (!(isBeheer && code && online)) return el;
+  const b = mini("✎", "edit", () => {
+    const s = document.createElement("select"); s.className = "beheersel";
+    const huidig = eff(ds, pos);
+    const lijst = NAMEN.slice(); if (huidig && lijst.indexOf(huidig) < 0) lijst.push(huidig);
+    [["", "— open plek —"]].concat(lijst.map(n => [n, n])).forEach(([v, t]) => {
+      const o = document.createElement("option"); o.value = v; o.textContent = t; if (v === huidig) o.selected = true; s.append(o);
+    });
+    s.onchange = () => beheerZet(ds, pos, s.value);
+    s.onblur = () => setTimeout(() => { if (document.body.contains(s)) renderAll(); }, 200);
+    b.replaceWith(s); s.focus();
+  });
+  b.title = "Beheer: wijzig deze dienst (geen e-mail)";
+  el.append(b);
+  return el;
+};
+
 /* ---------- start ---------- */
 applyName();
 laad();
