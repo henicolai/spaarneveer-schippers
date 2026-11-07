@@ -905,6 +905,54 @@ apply = function(data){
 };
 if (FOCUS) setTimeout(scrollFocus, 300);
 
+/* ---------- Beheer: Excel met gevaren diensten per schipper per maand ---------- */
+(function(){
+  const b = document.createElement("button"); b.className = "pill"; b.id = "maandxlsx"; b.hidden = true;
+  b.textContent = "⬇︎ Diensten per schipper per maand (.xlsx)";
+  $("#xlsx").after(b);
+  b.onclick = maandOverzicht;
+})();
+const _applyNameMaand = applyName;
+applyName = function(){ _applyNameMaand(); const b = $("#maandxlsx"); if (b) b.hidden = !isBeheer; };
+const MAANDNAMEN = ["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+async function maandOverzicht(){
+  let X; try{ X = await laadXLSX(); }catch(e){ toast("Downloaden lukte niet (geen verbinding)."); return; }
+  const t = iso(today0());
+  const telling = {}, maanden = [], details = [];
+  DATES.forEach(ds => {
+    if (ds >= t || geenVaart(ds)) return;
+    const d = fromIso(ds), ym = ds.slice(0,7);
+    POS.forEach(pos => {
+      const n = eff(ds, pos); if (!n) return;
+      if (maanden.indexOf(ym) < 0) maanden.push(ym);
+      telling[n] = telling[n] || {}; telling[n][ym] = (telling[n][ym] || 0) + 1;
+      const sl = slotsFor(d)[Number(pos[0]) - 1];
+      details.push([n, d, cap(dagNaam(d)), "Dienst " + sl.n, sl.van + "–" + sl.tot, pos[1], changed(ds, pos) ? "overgenomen/ingevuld" : ""]);
+    });
+  });
+  if (!details.length){ toast("Nog geen gevaren diensten om te tellen."); return; }
+  maanden.sort();
+  const kop = ["Schipper"].concat(maanden.map(ym => MAANDNAMEN[Number(ym.slice(5)) - 1] + " " + ym.slice(0,4)), ["Totaal"]);
+  const namen = Object.keys(telling).sort((a,b) => a.localeCompare(b, "nl"));
+  const rijen = [kop];
+  namen.forEach(n => { const r = [n]; let tot = 0; maanden.forEach(ym => { const c = telling[n][ym] || 0; r.push(c); tot += c; }); r.push(tot); rijen.push(r); });
+  const somRij = ["Totaal"]; let alles = 0;
+  maanden.forEach(ym => { const s = namen.reduce((a,n) => a + (telling[n][ym] || 0), 0); somRij.push(s); alles += s; });
+  somRij.push(alles); rijen.push(somRij);
+  rijen.push([]); rijen.push(["Gevaren diensten t/m " + fmtDate(addDays(today0(), -1)) + " " + addDays(today0(), -1).getFullYear() + ", volgens rooster inclusief overnames. Afwezigheid zonder overdracht is niet bekend."]);
+  details.sort((a,b) => a[0].localeCompare(b[0], "nl") || a[1] - b[1]);
+  const det = [["Schipper","Datum","Dag","Dienst","Tijd","Plek","Opmerking"]].concat(details);
+  const wb = X.utils.book_new();
+  const ws1 = X.utils.aoa_to_sheet(rijen);
+  ws1["!cols"] = [{wch:16}].concat(maanden.map(() => ({wch:14})), [{wch:8}]);
+  const ws2 = X.utils.aoa_to_sheet(det, {cellDates:true, dateNF:"dd-mm-yyyy"});
+  ws2["!cols"] = [{wch:16},{wch:11},{wch:10},{wch:9},{wch:12},{wch:5},{wch:20}];
+  X.utils.book_append_sheet(wb, ws1, "Per maand");
+  X.utils.book_append_sheet(wb, ws2, "Alle diensten");
+  X.writeFile(wb, "Spaarneveer-diensten-per-schipper-" + t + ".xlsx");
+  toast(online ? "Overzicht gedownload." : "Gedownload – let op: zonder verbinding zitten overnames er niet in.");
+}
+
 /* ---------- start ---------- */
 applyName();
 laad();
