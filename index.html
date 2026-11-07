@@ -813,6 +813,59 @@ async function slaOp(){
   mkBusy=false;
 }
 
+/* ---------- Contactgegevens (bewerkbaar door beheer, opgeslagen als mededeling met [CONTACT]) ---------- */
+const CONTACT_TAG = "[CONTACT]";
+const isContact = p => String(p.text || "").startsWith(CONTACT_TAG);
+(function(){
+  const card = $("#contact .card");
+  const ph = card.querySelector("p.empty"), ul = card.querySelector("ul");
+  const box = document.createElement("div"); box.id = "contactbox";
+  const txt = document.createElement("p"); txt.id = "contacttekst"; txt.style.cssText = "white-space:pre-wrap;margin:0 0 6px";
+  const nood = document.createElement("p"); nood.style.margin = "0"; nood.innerHTML = "<b>Noodgeval:</b> 112";
+  const knop = document.createElement("button"); knop.className = "pill"; knop.id = "contactbewerk"; knop.textContent = "Bewerken"; knop.hidden = true; knop.style.marginTop = "10px";
+  const ed = document.createElement("div"); ed.id = "contacted"; ed.hidden = true; ed.style.marginTop = "10px";
+  const ta = document.createElement("textarea"); ta.id = "contactta"; ta.rows = 6; ta.placeholder = "Bijv.\nCoördinator rooster: Naam – 06 12345678\nTechnische storing pont: Naam – 06 …";
+  const row = document.createElement("div"); row.className = "row";
+  const annul = document.createElement("button"); annul.className = "pill"; annul.textContent = "Annuleren";
+  const opsl = document.createElement("button"); opsl.className = "act"; opsl.textContent = "Opslaan";
+  row.append(annul, opsl); ed.append(ta, row);
+  box.append(txt, nood, knop, ed);
+  if (ph) ph.replaceWith(box); else card.prepend(box);
+  if (ul) ul.remove();
+  knop.onclick = () => { ta.value = huidigContact() || ""; ed.hidden = false; knop.hidden = true; ta.focus(); };
+  annul.onclick = () => { ed.hidden = true; renderContact(); };
+  opsl.onclick = async () => {
+    const t = ta.value.trim();
+    try{
+      const oud = posts.filter(isContact).map(p => p.id);
+      const r = await api({actie:"bericht", code, tekst: CONTACT_TAG + "\n" + (t || "-")});
+      if (!r.ok){ toast(r.fout || "Opslaan lukte niet."); return; }
+      let last = r;
+      for (const id of oud){ const r2 = await api({actie:"wisbericht", code, id}); if (r2.ok) last = r2; }
+      ed.hidden = true; apply(last); renderContact(); toast("Contactgegevens opgeslagen.");
+    }catch(e){ toast("Geen verbinding. Probeer het opnieuw."); }
+  };
+})();
+function huidigContact(){
+  const c = posts.filter(isContact).sort((a,b)=>b.ts-a.ts)[0];
+  if (!c) return "";
+  const t = String(c.text).slice(CONTACT_TAG.length).trim();
+  return t === "-" ? "" : t;
+}
+function renderContact(){
+  const t = huidigContact();
+  $("#contacttekst").textContent = t || "Nog geen contactgegevens ingevuld.";
+  $("#contacttekst").style.color = t ? "" : "var(--muted)";
+  $("#contactbewerk").hidden = !(isBeheer && code) || !$("#contacted").hidden;
+}
+const _renderPostsOrig = renderPosts;
+renderPosts = function(){
+  const alle = posts;
+  posts = alle.filter(p => !isContact(p));
+  try { _renderPostsOrig(); } finally { posts = alle; }
+  renderContact();
+};
+
 /* ---------- start ---------- */
 applyName();
 laad();
