@@ -866,6 +866,45 @@ renderPosts = function(){
   renderContact();
 };
 
+/* ---------- Directe link naar een dienst (#d-JJJJ-MM-DD_2a), bijv. vanuit de e-mail ---------- */
+const FOCUS = (function(){
+  const m = /^#d-(\d{4}-\d{2}-\d{2})_([123][ab])$/.exec(location.hash || "");
+  return m ? {ds: m[1], pos: m[2]} : null;
+})();
+(function(){
+  const st = document.createElement("style");
+  st.textContent = ".pos.focus{outline:3px solid var(--sig);outline-offset:2px;border-radius:10px;background:var(--sig-soft)}";
+  document.head.append(st);
+})();
+if (FOCUS){
+  const d = fromIso(FOCUS.ds), md = new Date(d);
+  md.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  weekOffset = Math.round((md - monday(0)) / (7 * 864e5));
+  show("rooster");
+}
+const _posElOrig = posEl;
+posEl = function(ds, pos, past){
+  const el = _posElOrig(ds, pos, past);
+  if (FOCUS && ds === FOCUS.ds && pos === FOCUS.pos){ el.classList.add("focus"); el.id = "focusdienst"; }
+  return el;
+};
+let focusKlaar = false;
+function scrollFocus(){ const e = document.getElementById("focusdienst"); if (e) e.scrollIntoView({block: "center"}); }
+const _applyFocusOrig = apply;
+apply = function(data){
+  _applyFocusOrig(data);
+  if (FOCUS && !focusKlaar){
+    focusKlaar = true;
+    setTimeout(scrollFocus, 100);
+    const n = eff(FOCUS.ds, FOCUS.pos);
+    if (offered(FOCUS.ds, FOCUS.pos) && n !== myName) toast(canAct() ? "Kun je? Tik op Overnemen bij de oranje gemarkeerde dienst." : "Kies bovenaan je naam en vul de code in om over te nemen.");
+    else if (n === myName) toast("Dit is jouw dienst.");
+    else if (!n) toast("Deze plek is nog open. Tik op Invullen om hem te nemen.");
+    else toast("Deze dienst is al overgenomen door " + n + ".");
+  }
+};
+if (FOCUS) setTimeout(scrollFocus, 300);
+
 /* ---------- start ---------- */
 applyName();
 laad();
