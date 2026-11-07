@@ -991,6 +991,130 @@ async function maandOverzicht(){
   toast(online ? (teVeel ? "Overzicht gedownload – " + teVeel + " schipper(s) boven het maximum (rood)." : "Overzicht gedownload.") : "Gedownload – let op: zonder verbinding zitten overnames er niet in.");
 }
 
+/* ---------- Passagiers per dienst + totalen per dag en maand ---------- */
+let PASS = {};   // "JJJJ-MM-DD_1" -> aantal
+const _applyPassOrig = apply;
+apply = function(data){ if (data && data.passagiers) PASS = data.passagiers; _applyPassOrig(data); renderPass(); };
+const passVan = (ds, n) => { const v = PASS[ds + "_" + n]; return (v === undefined || v === null || v === "") ? null : Number(v); };
+function dagTotaal(ds){ let t = 0, any = false; [1,2,3].forEach(n => { const v = passVan(ds, n); if (v !== null){ t += v; any = true; } }); return any ? t : null; }
+(function(){
+  const st = document.createElement("style");
+  st.textContent = ".pass{display:flex;align-items:center;gap:6px;flex-basis:100%;font-size:.8rem;color:var(--muted)}" +
+    ".pass input{width:78px;padding:4px 8px;font:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:8px}" +
+    ".pass b{color:var(--navy)} .dagpass{margin-left:6px;color:var(--navy-2);font-weight:600}" +
+    ".ptab{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:.9rem}" +
+    ".ptab th,.ptab td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right}" +
+    ".ptab th:first-child,.ptab td:first-child,.ptab th:nth-child(2),.ptab td:nth-child(2){text-align:left}" +
+    ".ptab thead th{background:var(--water);color:var(--navy)} .ptab tfoot td{font-weight:700;background:var(--water)}";
+  document.head.append(st);
+  const b = document.createElement("button"); b.dataset.t = "passagiers"; b.textContent = "Passagiers";
+  b.onclick = () => { show("passagiers"); renderPass(); };
+  $("#tabs").insertBefore(b, $("#tabs button[data-t=berichten]"));
+  const s = document.createElement("section"); s.id = "passagiers";
+  s.innerHTML = "<div class=\"weekbar\"><button class=\"pill\" id=\"pprev\">‹ Vorige</button><div style=\"text-align:center\"><h2 id=\"ptitel\">Maand</h2><div class=\"sub\" id=\"psub\"></div></div><button class=\"pill\" id=\"pnext\">Volgende ›</button></div>" +
+    "<div id=\"ptabel\"></div>" +
+    "<div class=\"row\" style=\"justify-content:flex-start;margin-top:12px\"><button class=\"pill\" id=\"pxlsx\">⬇︎ Passagiers (.xlsx)</button></div>" +
+    "<p class=\"empty\" style=\"font-size:.8rem;margin-top:8px\">Het aantal passagiers vul je na je dienst in bij die dienst in het Rooster.</p>";
+  $("main").insertBefore(s, $("#berichten"));
+  $("#pprev").onclick = () => { pMaand--; renderPass(); };
+  $("#pnext").onclick = () => { pMaand++; renderPass(); };
+  $("#pxlsx").onclick = passXlsx;
+})();
+let pMaand = 0;
+function maandVan(off){ const d = today0(); d.setDate(1); d.setMonth(d.getMonth() + off); return d; }
+function renderPass(){
+  const m = maandVan(pMaand), y = m.getFullYear(), mo = m.getMonth();
+  $("#ptitel").textContent = cap(MAANDNAMEN[mo]) + " " + y;
+  const box = $("#ptabel"); box.innerHTML = "";
+  const t = document.createElement("table"); t.className = "ptab";
+  t.innerHTML = "<thead><tr><th>Datum</th><th>Dag</th><th>Dienst 1</th><th>Dienst 2</th><th>Dienst 3</th><th>Totaal</th></tr></thead>";
+  const tb = document.createElement("tbody"); const som = [0,0,0,0]; let dagen = 0;
+  for (let d = new Date(y, mo, 1); d.getMonth() === mo; d.setDate(d.getDate() + 1)){
+    const ds = iso(d); if (!ROOSTER[ds] || geenVaart(ds)) continue;
+    const tot = dagTotaal(ds); if (tot === null) continue;
+    dagen++;
+    const tr = document.createElement("tr");
+    const cel = v => { const td = document.createElement("td"); td.textContent = v; tr.append(td); };
+    cel(d.getDate() + " " + MAANDEN[mo]); cel(cap(dagNaam(d)));
+    [1,2,3].forEach((n, i) => { const v = passVan(ds, n); cel(v === null ? "–" : v); som[i] += v || 0; });
+    cel(tot); som[3] += tot; tb.append(tr);
+  }
+  t.append(tb);
+  if (dagen){
+    const tf = document.createElement("tfoot"); const tr = document.createElement("tr");
+    ["Totaal " + MAANDNAMEN[mo], dagen + " dagen", som[0], som[1], som[2], som[3]].forEach(v => { const td = document.createElement("td"); td.textContent = v; tr.append(td); });
+    tf.append(tr); t.append(tf); box.append(t);
+    $("#psub").textContent = som[3] + " passagiers · gem. " + Math.round(som[3] / dagen) + " per dag";
+  } else {
+    $("#psub").textContent = "";
+    const p = document.createElement("p"); p.className = "empty"; p.textContent = "Nog geen passagiersaantallen ingevuld voor deze maand."; box.append(p);
+  }
+}
+async function slaPassOp(ds, n, waarde, inp){
+  if (!canAct()){ toast("Kies je naam en vul de code in om passagiers in te vullen."); return; }
+  const v = String(waarde).trim();
+  if (v !== "" && !(/^\d{1,4}$/.test(v))){ toast("Vul een getal in."); return; }
+  inp.disabled = true;
+  try{
+    const r = await api({actie: "passagiers", code, sleutel: ds + "_" + n, aantal: v, naam: myName});
+    if (r.ok){ apply(r); toast(v === "" ? "Aantal gewist." : "Opgeslagen: " + v + " passagiers."); }
+    else toast(r.fout || "Opslaan lukte niet.");
+  }catch(e){ toast("Geen verbinding. Probeer het opnieuw."); }
+  inp.disabled = false;
+}
+const _renderWeekPass = renderWeek;
+renderWeek = function(){
+  _renderWeekPass();
+  const m = monday(weekOffset), t = iso(today0());
+  const dagEls = $("#days").querySelectorAll(".day"); let idx = 0;
+  for (let i = 0; i < 7; i++){
+    const d = new Date(m); d.setDate(m.getDate() + i); const ds = iso(d);
+    if (!ROOSTER[ds]) continue;
+    const el = dagEls[idx++]; if (!el || geenVaart(ds)) continue;
+    const tot = dagTotaal(ds);
+    if (tot !== null){ const s = document.createElement("span"); s.className = "dagpass"; s.textContent = "· " + tot + " passagiers"; el.querySelector(".dayhead span").append(s); }
+    if (ds > t) continue;
+    const rows = el.querySelectorAll(".slot");
+    slotsFor(d).forEach((sl, k) => {
+      const row = rows[k]; if (!row) return;
+      const v = passVan(ds, sl.n);
+      const box = document.createElement("div"); box.className = "pass";
+      if (canAct()){
+        box.append(document.createTextNode("Passagiers:"));
+        const inp = document.createElement("input"); inp.type = "number"; inp.min = "0"; inp.inputMode = "numeric"; inp.placeholder = "aantal";
+        if (v !== null) inp.value = v;
+        inp.onchange = () => slaPassOp(ds, sl.n, inp.value, inp);
+        box.append(inp);
+      } else if (v !== null){
+        box.append(document.createTextNode("Passagiers: ")); const b = document.createElement("b"); b.textContent = v; box.append(b);
+      } else return;
+      row.append(box);
+    });
+  }
+};
+async function passXlsx(){
+  let X; try{ X = await laadXLSX(); }catch(e){ toast("Downloaden lukte niet (geen verbinding)."); return; }
+  const per = [["Datum","Dag","Dienst 1","Dienst 2","Dienst 3","Totaal"]], maand = {}, volgorde = [];
+  DATES.forEach(ds => {
+    if (geenVaart(ds)) return; const tot = dagTotaal(ds); if (tot === null) return;
+    const d = fromIso(ds), ym = ds.slice(0,7);
+    per.push([d, cap(dagNaam(d))].concat([1,2,3].map(n => passVan(ds, n)), [tot]));
+    if (!maand[ym]){ maand[ym] = {dagen: 0, tot: 0, d: [0,0,0]}; volgorde.push(ym); }
+    maand[ym].dagen++; maand[ym].tot += tot; [1,2,3].forEach((n, i) => maand[ym].d[i] += passVan(ds, n) || 0);
+  });
+  if (per.length === 1){ toast("Nog geen passagiersaantallen ingevuld."); return; }
+  const mt = [["Maand","Dagen","Dienst 1","Dienst 2","Dienst 3","Totaal","Gem. per dag"]];
+  let all = 0;
+  volgorde.sort().forEach(ym => { const x = maand[ym]; all += x.tot; mt.push([MAANDNAMEN[Number(ym.slice(5)) - 1] + " " + ym.slice(0,4), x.dagen].concat(x.d, [x.tot, Math.round(x.tot / x.dagen)])); });
+  mt.push(["Totaal", "", "", "", "", all, ""]);
+  const wb = X.utils.book_new();
+  const w1 = X.utils.aoa_to_sheet(mt); w1["!cols"] = [{wch:16},{wch:7},{wch:9},{wch:9},{wch:9},{wch:9},{wch:12}];
+  const w2 = X.utils.aoa_to_sheet(per, {cellDates: true, dateNF: "dd-mm-yyyy"}); w2["!cols"] = [{wch:11},{wch:10},{wch:9},{wch:9},{wch:9},{wch:9}];
+  X.utils.book_append_sheet(wb, w1, "Per maand"); X.utils.book_append_sheet(wb, w2, "Per dag");
+  X.writeFile(wb, "Spaarneveer-passagiers-" + iso(new Date()) + ".xlsx");
+  toast("Passagiersoverzicht gedownload.");
+}
+
 /* ---------- start ---------- */
 applyName();
 laad();
