@@ -1214,6 +1214,26 @@ posEl = function(ds, pos, past){
   return el;
 };
 
+/* ---------- Namen uit tabblad Schippers (ook wie nog niet in het rooster staat) ---------- */
+function voegNamenToe(lijst){
+  let nieuw = false;
+  (lijst || []).forEach(n => { n = String(n || "").trim(); if (n && NAMEN.indexOf(n) < 0){ NAMEN.push(n); nieuw = true; } });
+  if (!nieuw) return false;
+  NAMEN.sort((a, b) => a.localeCompare(b, "nl"));
+  const s = $("#ikben"), keuze = s.value;
+  while (s.options.length > 1) s.remove(1);
+  NAMEN.forEach(n => { const o = document.createElement("option"); o.value = n; o.textContent = n; s.append(o); });
+  s.value = NAMEN.includes(keuze) ? keuze : (NAMEN.includes(myName) ? myName : "");
+  return true;
+}
+let EXTRA_NAMEN = [];
+const _applyNamen = apply;
+apply = function(data){
+  if (data && data.namen) EXTRA_NAMEN = data.namen;
+  _applyNamen(data);            // kan de namenlijst opnieuw opbouwen (rooster uit de Sheet)
+  voegNamenToe(EXTRA_NAMEN);    // daarna de namen uit tabblad Schippers weer toevoegen
+};
+
 /* ---------- start ---------- */
 applyName();
 laad();
