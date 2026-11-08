@@ -1,0 +1,91 @@
+SPAARNEVEER – HANDLEIDING SCHIPPERSROOSTER
+==========================================
+
+Adres:  https://henicolai.github.io/spaarneveer-schippers/
+Code:   (de schipperscode krijg je van de beheerder)
+
+Tip: zet de pagina op het beginscherm van je telefoon.
+  iPhone (Safari):  deelknop  >  "Zet op beginscherm"
+  Android (Chrome): menu ⋮  >  "Toevoegen aan startscherm"
+
+
+1. DE EERSTE KEER
+-----------------
+- Open de pagina.
+- Kies bij "Ik ben" je eigen naam.
+- Vul de schipperscode in en tik op OK.
+Je telefoon onthoudt dit; de volgende keer hoeft het niet opnieuw.
+
+
+2. ROOSTER BEKIJKEN
+-------------------
+- Tabblad "Rooster": per week, met "Vorige" en "Volgende".
+- Per dag 3 diensten, steeds 2 schippers (a en b):
+    ma–vr:  7.30–11.00 | 11.00–14.30 | 14.30–18.00
+    za–zo:  9.00–12.00 | 12.00–15.00 | 15.00–18.00
+- Kleuren:
+    groen          = jouw dienst
+    oranje, doorgestreept = ter overname aangeboden
+    roze "open plek"      = schipper gezocht
+    naam met •     = gewijzigd t.o.v. het vaarrooster
+- Tabblad "Mijn diensten": al jouw komende diensten op een rij.
+
+
+3. KUN JE NIET? DIENST OVERDRAGEN
+---------------------------------
+- Tik bij je dienst op "Overdragen" en kies:
+    "Iedereen"     = alle schippers krijgen een e-mail dat de dienst
+                     vrij is, met een directe link naar die dienst.
+    "Alleen <naam>" = alleen die collega krijgt een e-mail met de
+                     vraag of hij/zij de dienst wil overnemen.
+- De dienst verschijnt in beide gevallen onder "Open plekken".
+- LET OP: je blijft ingeroosterd tot iemand de dienst overneemt.
+  Zonder 2 schippers vaart de pont niet.
+- Toch wel kunnen? Tik op "Intrekken".
+
+
+4. DIENST OVERNEMEN OF OPEN PLEK INVULLEN
+-----------------------------------------
+- Via de e-mail: tik op de link. Het rooster opent in de juiste
+  week en de dienst is oranje omlijnd. Tik op "Overnemen".
+- Of kijk zelf onder "Open plekken" (of in het rooster).
+- Tik op "Overnemen" (aangeboden dienst) of "Invullen" (open plek).
+- Je naam staat dan direct in het rooster.
+- Wie het eerst tikt, vaart.
+- Neem je een aangeboden dienst over, dan krijgen alle schippers een
+  e-mail dat jij die dienst hebt overgenomen. Zo weet iedereen dat
+  hij niet meer vrij is.
+
+
+5. PASSAGIERS INVULLEN (NA JE DIENST)
+-------------------------------------
+- Ga na je dienst naar het tabblad "Rooster".
+- Bij elke dienst van vandaag en eerder staat een vakje
+  "Passagiers". Vul het totale aantal passagiers van die dienst in.
+- Het wordt vanzelf opgeslagen zodra je het vakje verlaat
+  (je ziet "Opgeslagen: … passagiers").
+- Eén schipper per dienst vult in is genoeg. Een fout aantal kun je
+  gewoon overschrijven; vakje leegmaken = aantal wissen.
+- Bij de datum staat het dagtotaal.
+- Tabblad "Passagiers": overzicht per maand met totalen per dag,
+  maandtotaal en gemiddelde per dag, plus Excel-download.
+
+
+6. AFDRUKKEN / DOWNLOADEN
+-------------------------
+- "PDF van deze week": weekrooster om te printen of door te sturen.
+- "Heel rooster (.xlsx)": het hele kwartaal in Excel.
+- "Passagiers (.xlsx)" (tabblad Passagiers): aantallen per dag
+  en per maand.
+
+
+7. OVERIG
+---------
+- Tabblad "Afspraken": vaste afspraken (altijd 2 schippers,
+  vaarbewijs 1, max. 12 passagiers, windkracht 6).
+- Tabblad "Mededelingen": berichten van de beheerder.
+- Geen e-mails meer willen ontvangen of een ander e-mailadres?
+  Laat het Henk weten.
+- Bij nood: bel 112, daarna de coördinator.
+
+Vragen of iets werkt niet?  Henk Nicolai – hnicolai@gmail.com
