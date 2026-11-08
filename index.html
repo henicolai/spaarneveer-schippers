@@ -1199,6 +1199,7 @@ write = function(ds, pos, data, okMsg){
     const body = {actie: "zet", naam: data.naam, aangeboden: true, vorige: data.vorige || "", aan: data.aan, code, sleutel: key, verwacht: w ? (w.naam || "") : null};
     return api(body).then(r => {
       if (!r.ok) toast(r.fout || "Opslaan lukte niet.");
+      else if (r.gemaild === 0) toast("Let op: voor " + data.aan + " is geen e-mailadres bekend, er is geen mail verstuurd. De dienst staat wel als aangeboden.");
       else if (okMsg) toast(okMsg);
       apply(r);
     }).catch(() => toast("Geen verbinding. Probeer het opnieuw.")).finally(() => { busy = false; });
