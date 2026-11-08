@@ -1234,6 +1234,62 @@ apply = function(data){
   voegNamenToe(EXTRA_NAMEN);    // daarna de namen uit tabblad Schippers weer toevoegen
 };
 
+/* ---------- Passagiers: beheerder vult achteraf in, per maand ---------- */
+(function(){
+  const st = document.createElement("style");
+  st.textContent = ".ptab input.pbh{width:64px;padding:3px 6px;font:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:6px;text-align:right}";
+  document.head.append(st);
+})();
+async function slaPassBeheer(ds, n, inp){
+  const v = String(inp.value).trim();
+  if (v !== "" && !(/^\d{1,4}$/.test(v))){ toast("Vul een getal in."); return; }
+  inp.disabled = true;
+  try{
+    const r = await api({actie: "passagiers", code, sleutel: ds + "_" + n, aantal: v, naam: myName || "beheer"});
+    if (r.ok){ PASS = r.passagiers || PASS; toast(v === "" ? "Aantal gewist." : "Opgeslagen: " + v + " passagiers."); renderPass(); renderWeek(); }
+    else toast(r.fout || "Opslaan lukte niet.");
+  }catch(e){ toast("Geen verbinding. Probeer het opnieuw."); }
+  inp.disabled = false;
+}
+const _renderPassBeheer = renderPass;
+renderPass = function(){
+  if (!(isBeheer && code && online)) return _renderPassBeheer();
+  const m = maandVan(pMaand), y = m.getFullYear(), mo = m.getMonth(), t = iso(today0());
+  $("#ptitel").textContent = cap(MAANDNAMEN[mo]) + " " + y;
+  const box = $("#ptabel"); box.innerHTML = "";
+  const tab = document.createElement("table"); tab.className = "ptab";
+  tab.innerHTML = "<thead><tr><th>Datum</th><th>Dag</th><th>Dienst 1</th><th>Dienst 2</th><th>Dienst 3</th><th>Totaal</th></tr></thead>";
+  const tb = document.createElement("tbody"); const som = [0,0,0,0]; let dagen = 0, rijen = 0;
+  for (let d = new Date(y, mo, 1); d.getMonth() === mo; d.setDate(d.getDate() + 1)){
+    const ds = iso(d); if (!ROOSTER[ds] || geenVaart(ds) || ds > t) continue;
+    rijen++;
+    const tr = document.createElement("tr");
+    const cel = v => { const td = document.createElement("td"); td.textContent = v; tr.append(td); return td; };
+    cel(d.getDate() + " " + MAANDEN[mo]); cel(cap(dagNaam(d)));
+    [1,2,3].forEach((n, i) => {
+      const td = document.createElement("td");
+      const inp = document.createElement("input"); inp.className = "pbh"; inp.type = "number"; inp.min = "0"; inp.inputMode = "numeric";
+      const v = passVan(ds, n); if (v !== null){ inp.value = v; som[i] += v; }
+      inp.onchange = () => slaPassBeheer(ds, n, inp);
+      td.append(inp); tr.append(td);
+    });
+    const tot = dagTotaal(ds); cel(tot === null ? "–" : tot);
+    if (tot !== null){ som[3] += tot; dagen++; }
+    tb.append(tr);
+  }
+  tab.append(tb);
+  if (rijen){
+    const tf = document.createElement("tfoot"); const tr = document.createElement("tr");
+    ["Totaal " + MAANDNAMEN[mo], dagen + " dagen", som[0], som[1], som[2], som[3]].forEach(v => { const td = document.createElement("td"); td.textContent = v; tr.append(td); });
+    tf.append(tr); tab.append(tf); box.append(tab);
+  } else {
+    const p = document.createElement("p"); p.className = "empty"; p.textContent = "Geen vaardagen (tot en met vandaag) in deze maand."; box.append(p);
+  }
+  $("#psub").textContent = (dagen ? som[3] + " passagiers · gem. " + Math.round(som[3] / dagen) + " per dag · " : "") + "beheer: vakjes zijn bewerkbaar";
+};
+const _applyNamePB = applyName;
+applyName = function(){ _applyNamePB(); renderPass(); };
+
 /* ---------- start ---------- */
 applyName();
 laad();
