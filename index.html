@@ -1164,6 +1164,55 @@ posEl = function(ds, pos, past){
   return el;
 };
 
+/* ---------- Overdragen: aan iedereen of aan één schipper ---------- */
+(function(){
+  const st = document.createElement("style");
+  st.textContent = ".pos select.aansel,.btns select.aansel{font:inherit;font-size:.8rem;padding:3px 6px;border:1px solid var(--line);border-radius:8px;max-width:190px}";
+  document.head.append(st);
+})();
+function aanKiezer(ds, pos, knop){
+  const s = document.createElement("select"); s.className = "aansel";
+  const mate = eff(ds, partner(pos));
+  const opties = [["", "Overdragen aan…"], ["*", "Iedereen (mail naar alle schippers)"]]
+    .concat(NAMEN.filter(n => n !== myName && n !== mate).map(n => [n, "Alleen " + n]));
+  opties.forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; s.append(o); });
+  s.onchange = () => {
+    if (!s.value) return;
+    if (s.value === "*") offer(ds, pos);
+    else write(ds, pos, {naam: myName, aangeboden: true, vorige: wijz[ds + "_" + pos]?.vorige || "", aan: s.value},
+      "Aangeboden aan " + s.value + " (alleen die krijgt een mail). Je blijft ingeroosterd tot de dienst is overgenomen.");
+  };
+  s.onblur = () => setTimeout(() => { if (document.body.contains(s)) renderAll(); }, 200);
+  knop.replaceWith(s); s.focus();
+}
+const _actionsAan = actions;
+actions = function(ds, pos){
+  const out = _actionsAan(ds, pos);
+  out.forEach(b => { if (b.textContent === "Overdragen") b.onclick = () => aanKiezer(ds, pos, b); });
+  return out;
+};
+const _writeAan = write;
+write = function(ds, pos, data, okMsg){
+  if (data && data.aan){
+    if (busy) return; busy = true;
+    const key = ds + "_" + pos, w = wijz[key];
+    const body = {actie: "zet", naam: data.naam, aangeboden: true, vorige: data.vorige || "", aan: data.aan, code, sleutel: key, verwacht: w ? (w.naam || "") : null};
+    return api(body).then(r => {
+      if (!r.ok) toast(r.fout || "Opslaan lukte niet.");
+      else if (okMsg) toast(okMsg);
+      apply(r);
+    }).catch(() => toast("Geen verbinding. Probeer het opnieuw.")).finally(() => { busy = false; });
+  }
+  return _writeAan(ds, pos, data, okMsg);
+};
+const _posElAan = posEl;
+posEl = function(ds, pos, past){
+  const el = _posElAan(ds, pos, past);
+  const w = wijz[ds + "_" + pos];
+  if (w && w.aangeboden && w.aan){ const t = el.querySelector(".name"); if (t) t.title = "Ter overname aangeboden aan " + w.aan; }
+  return el;
+};
+
 /* ---------- start ---------- */
 applyName();
 laad();
