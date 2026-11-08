@@ -1,0 +1,130 @@
+SPAARNEVEER – HANDLEIDING VOOR BEHEERDERS
+=========================================
+Vertrouwelijk: alleen voor beheerders. Niet doorsturen naar de ploeg.
+
+Adres:        https://henicolai.github.io/spaarneveer-schippers/
+Schipperscode: (krijg je van de beheerder)
+Beheercode:    (krijg je persoonlijk van de beheerder – nooit delen)
+
+Alles wat schippers en beheerders doen, wordt bewaard in de Google Sheet
+"Spaarneveer wijzigingen" in de Google Drive van Henk (hnicolai@gmail.com).
+
+
+1. INLOGGEN ALS BEHEERDER
+-------------------------
+- Open de pagina en kies bij "Ik ben" je eigen naam.
+- Tik onderaan op "Beheer" en vul de beheercode in.
+- Je ziet nu extra knoppen en het tabblad "Rooster maken".
+- Uitloggen: tik op "Beheer: aan (uitzetten)". Daarna vul je weer de
+  gewone schipperscode in.
+
+
+2. EEN DIENST WIJZIGEN ZONDER E-MAIL  (✎)
+-----------------------------------------
+- In het Rooster staat bij elke schipper en open plek een ✎-knopje.
+- Tik erop en kies een andere naam, of "— open plek —".
+- Wordt meteen opgeslagen. Er gaat GEEN e-mail naar de schippers.
+- Kies je de naam die in het vaarrooster stond, dan wordt de dienst
+  teruggezet.
+- Werkt ook voor diensten in het verleden: zo corrigeer je achteraf
+  wie echt gevaren heeft (belangrijk voor de vergoedingen).
+- ↺ naast een gewijzigde dienst = terugzetten naar het vaarrooster.
+
+LET OP: de gewone knoppen "Overdragen" en "Overnemen" sturen WEL
+e-mails, ook als je als beheerder bent ingelogd. Wil je stil
+wijzigen, gebruik dan altijd ✎.
+
+
+3. ROOSTER MAKEN OF AANPASSEN  (tabblad "Rooster maken")
+--------------------------------------------------------
+- Kies de periode ("Tot en met").
+- "Nieuw concept (patroon laatste 2 weken)": vult de nieuwe periode
+  met hetzelfde patroon als de laatste twee weken.
+- "Bestaand rooster bewerken": past het huidige rooster aan.
+- Per dienst kies je een naam, "— open —", of "+ nieuwe naam…" voor
+  een nieuwe schipper.
+- Pont vaart niet (onderhoud, feestdag, ijs)? Vul bij die dag de reden
+  in bij "Geen vaart? Reden". Die dag staat dan als "geen vaart" in
+  het rooster en telt niet mee in de vergoedingen.
+- "Opslaan in rooster" zet het concept definitief in het rooster.
+  "Concept weggooien" gooit het concept weg; er verandert dan niets.
+- Bij opslaan gaan er geen e-mails uit.
+
+
+4. MEDEDELINGEN EN CONTACTGEGEVENS
+----------------------------------
+- Tabblad "Mededelingen": als beheerder kun je berichten plaatsen en
+  verwijderen. Alle schippers zien ze op de pagina (geen e-mail).
+- Tabblad "Contact": met "Bewerken" pas je de contactgegevens aan,
+  daarna "Opslaan".
+
+
+5. E-MAILLIJST VAN DE SCHIPPERS
+-------------------------------
+- Staat in de Sheet "Spaarneveer wijzigingen", tabblad "Schippers":
+    kolom A = naam (precies zoals in het rooster, bijv. "Jan O")
+    kolom B = e-mailadres
+    kolom C = mail ja/nee  ("nee" = krijgt geen mails)
+- Nieuwe schipper of nieuw adres? Pas het daar aan. Het werkt meteen.
+  Een nieuwe naam in kolom A is daarna ook te kiezen bij "Ik ben",
+  bij ✎, bij "Overdragen aan…" en bij "Rooster maken", ook als die
+  schipper nog niet in het rooster staat.
+- Henk N staat erin zonder e-mailadres: hij krijgt alle mails al als
+  afzender.
+- Wie geen adres heeft (nu: JeroenB), krijgt geen mails. Kiest een
+  schipper bij "Overdragen" zo iemand, dan meldt de pagina dat er
+  geen mail is verstuurd.
+
+
+6. WANNEER GAAN ER E-MAILS UIT?
+-------------------------------
+- "Overdragen" aan Iedereen:       alle schippers (in BCC).
+- "Overdragen" aan één collega:    alleen die collega.
+- "Overnemen" van een aangeboden dienst:
+      was aangeboden aan iedereen  -> alle schippers krijgen bericht
+      was aangeboden aan één       -> alleen de aanbieder
+- Intrekken, open plek invullen, ✎, rooster opslaan: géén mail.
+- Afzender is hnicolai@gmail.com ("Spaarneveer schippersrooster").
+
+MAIL-LIMIET: Google staat maximaal ongeveer 100 ontvangers per dag
+toe. Eén aanbod aan iedereen + de overname = ca. 60 ontvangers.
+Is de limiet op, dan slaat het systeem de mail over; het rooster zelf
+blijft gewoon kloppen. De volgende dag werkt het weer.
+
+
+7. OVERZICHTEN EN EXCEL
+-----------------------
+- "PDF van deze week" en "Heel rooster (.xlsx)": voor iedereen.
+- Tabblad "Passagiers": passagiers per dag en per maand, met
+  "Passagiers (.xlsx)". Schippers vullen het aantal in na hun dienst.
+  Als beheerder zie je hier per maand ALLE vaardagen (tot en met
+  vandaag) met invulvakjes per dienst. Zo vul je achteraf aantallen
+  in of verbeter je ze. Vakje leegmaken = aantal wissen. Met
+  "‹ Vorige" ga je naar eerdere maanden.
+- "Diensten per schipper per maand (.xlsx)" (alleen beheer):
+    * per schipper per maand het aantal gevaren diensten
+    * vergoeding € 16 per dienst, totalen per maand en per jaar
+    * naam ROOD als iemand in een kalenderjaar boven de maximale
+      onbelaste vrijwilligersvergoeding van € 1.760,83 komt
+    * tabblad "Alle diensten": elke dienst apart
+  Alleen diensten tot en met gisteren tellen mee; dagen zonder vaart
+  niet. Diensten van vóór 1 oktober 2026 staan niet in het systeem.
+  Klopt er iets niet (iemand niet komen opdagen), corrigeer de dienst
+  eerst met ✎ en maak dan de Excel opnieuw.
+
+
+8. TECHNIEK (VOOR HENK)
+-----------------------
+- Pagina:  GitHub-repository henicolai/spaarneveer-schippers,
+           bestand index.html (GitHub Pages).
+- Op spaarneveer.nl (Weebly) staat de pagina via een iframe.
+- Opslag en e-mail: Google Apps Script "Spaarneveer schippersrooster"
+  (Drive van hnicolai@gmail.com), als web-app voor "Iedereen".
+  Na een wijziging in het script: Implementeren > Implementaties
+  beheren > potlood > Versie: Nieuwe versie > Implementeren.
+- Tabbladen in de Sheet: Wijzigingen, Mededelingen, Rooster,
+  Schippers, Passagiers. Niet hernoemen of verwijderen.
+- Codes wijzigen: bovenin het script (SCHIPPERSCODE / BEHEERCODE),
+  daarna opnieuw implementeren en de nieuwe code doorgeven.
+
+Vragen of storing?  Henk Nicolai – hnicolai@gmail.com
