@@ -216,7 +216,7 @@
         <ol>
           <li>Tik bij je dienst op <b>Overdragen</b>.</li>
           <li>De dienst komt bij iedereen onder <i>Open plekken</i>.</li>
-          <li>Alle schippers krijgen een e-mail.</li>
+          <li>Je kiest: een e-mail aan <b>alle schippers</b>, of alleen aan <b>één collega</b>.</li>
           <li>Een collega tikt op <b>Overnemen</b>; zijn naam komt dan in het rooster.</li>
           <li>Tot dat gebeurt blijf jij ingeroosterd.</li>
         </ol>
@@ -1292,6 +1292,98 @@ applyName = function(){ _applyNamePB(); renderPass(); };
 
 /* ---------- Naamswijziging: oude naam op telefoons omzetten ---------- */
 (function(){ const oud = {"Paul2": "Paul Sam", "Paul S": "Paul Sam", "Paul": "Paul Str"}; if (oud[myName]){ myName = oud[myName]; store.set("sv-naam", myName); } })();
+
+/* ---------- Afspraken (bewerkbaar door beheer, opgeslagen als mededeling met [AFSPRAKEN]) ---------- */
+const AFSPR_TAG = "[AFSPRAKEN]";
+const isAfspr = p => String(p.text || "").startsWith(AFSPR_TAG);
+let AFSPR_STANDAARD = "";
+function afsprUitHtml(grid){
+  // huidige vaste tekst omzetten naar het eenvoudige invoerformaat
+  const regels = [];
+  grid.querySelectorAll(".card").forEach(c => {
+    const h = c.querySelector("h3"); if (h) regels.push("# " + h.textContent.trim());
+    const items = c.querySelectorAll("li");
+    if (items.length) items.forEach(li => regels.push("- " + li.innerHTML.replace(/<\/?b>/g, "**").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim()));
+    else c.querySelectorAll("p").forEach(p => regels.push(p.innerHTML.replace(/<\/?b>/g, "**").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim()));
+    regels.push("");
+  });
+  return regels.join("\n").trim();
+}
+function afsprTekstMetVet(el, tekst){
+  String(tekst).split("**").forEach((stuk, i) => {
+    if (!stuk) return;
+    if (i % 2){ const b = document.createElement("b"); b.textContent = stuk; el.append(b); }
+    else el.append(document.createTextNode(stuk));
+  });
+}
+function afsprRender(tekst){
+  const grid = $("#afsprgrid"); grid.innerHTML = "";
+  let card = null, lijst = null;
+  const nieuweKaart = titel => { card = document.createElement("div"); card.className = "card"; if (titel){ const h = document.createElement("h3"); h.textContent = titel; card.append(h); } grid.append(card); lijst = null; };
+  String(tekst).split("\n").forEach(r => {
+    const t = r.trim();
+    if (!t){ lijst = null; return; }
+    if (t.startsWith("# ")){ nieuweKaart(t.slice(2).trim()); return; }
+    if (!card) nieuweKaart("");
+    if (t.startsWith("- ")){
+      if (!lijst){ lijst = document.createElement("ul"); card.append(lijst); }
+      const li = document.createElement("li"); afsprTekstMetVet(li, t.slice(2)); lijst.append(li);
+    } else {
+      lijst = null; const p = document.createElement("p"); p.style.margin = "0 0 6px"; afsprTekstMetVet(p, t); card.append(p);
+    }
+  });
+}
+(function(){
+  const sec = $("#instructies"), grid = sec.querySelector(".grid2");
+  grid.id = "afsprgrid";
+  AFSPR_STANDAARD = afsprUitHtml(grid);
+  const knop = document.createElement("button"); knop.className = "pill"; knop.id = "afsprbewerk"; knop.textContent = "Afspraken bewerken"; knop.hidden = true; knop.style.marginBottom = "10px";
+  const ed = document.createElement("div"); ed.id = "afspred"; ed.hidden = true; ed.className = "card"; ed.style.marginBottom = "14px";
+  const uitleg = document.createElement("p"); uitleg.className = "empty"; uitleg.style.cssText = "font-size:.8rem;margin:0 0 6px";
+  uitleg.textContent = "Regel met # = kopje (nieuw blok) · regel met - = opsommingspunt · **woord** = vet · lege regel = witruimte.";
+  const ta = document.createElement("textarea"); ta.id = "afsprta"; ta.rows = 18; ta.style.width = "100%";
+  const row = document.createElement("div"); row.className = "row";
+  const terug = document.createElement("button"); terug.className = "pill"; terug.textContent = "Standaardtekst terugzetten";
+  const annul = document.createElement("button"); annul.className = "pill"; annul.textContent = "Annuleren";
+  const opsl = document.createElement("button"); opsl.className = "act"; opsl.textContent = "Opslaan";
+  row.append(terug, annul, opsl); ed.append(uitleg, ta, row);
+  sec.insertBefore(ed, grid); sec.insertBefore(knop, ed);
+  knop.onclick = () => { ta.value = huidigeAfspraken() || AFSPR_STANDAARD; ed.hidden = false; knop.hidden = true; ta.focus(); };
+  annul.onclick = () => { ed.hidden = true; renderAfspraken(); };
+  terug.onclick = () => { ta.value = AFSPR_STANDAARD; };
+  opsl.onclick = async () => {
+    const t = ta.value.trim();
+    if (!t){ toast("De afspraken kunnen niet leeg zijn."); return; }
+    opsl.disabled = true;
+    try{
+      const oud = posts.filter(isAfspr).map(p => p.id);
+      const r = await api({actie: "bericht", code, tekst: AFSPR_TAG + "\n" + t});
+      if (!r.ok){ toast(r.fout || "Opslaan lukte niet."); return; }
+      let last = r;
+      for (const id of oud){ const r2 = await api({actie: "wisbericht", code, id}); if (r2.ok) last = r2; }
+      ed.hidden = true; apply(last); renderAfspraken(); toast("Afspraken opgeslagen.");
+    }catch(e){ toast("Geen verbinding. Probeer het opnieuw."); }
+    finally{ opsl.disabled = false; }
+  };
+})();
+function huidigeAfspraken(){
+  const a = posts.filter(isAfspr).sort((x, y) => y.ts - x.ts)[0];
+  return a ? String(a.text).slice(AFSPR_TAG.length).trim() : "";
+}
+function renderAfspraken(){
+  const t = huidigeAfspraken();
+  afsprRender(t || AFSPR_STANDAARD);
+  $("#afsprbewerk").hidden = !(isBeheer && code) || !$("#afspred").hidden;
+}
+const _renderPostsAfspr = renderPosts;
+renderPosts = function(){
+  const alle = posts;
+  posts = alle.filter(p => !isAfspr(p));
+  try { _renderPostsAfspr(); } finally { posts = alle; }
+  renderAfspraken();
+};
+const _applyNameAfspr = applyName;
+applyName = function(){ _applyNameAfspr(); renderAfspraken(); };
 
 /* ---------- start ---------- */
 applyName();
