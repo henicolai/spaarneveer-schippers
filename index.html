@@ -934,7 +934,7 @@ async function maandOverzicht(){
       if (jaren.indexOf(y) < 0) jaren.push(y);
       telling[n] = telling[n] || {}; telling[n][ym] = (telling[n][ym] || 0) + 1;
       const sl = slotsFor(d)[Number(pos[0]) - 1];
-      details.push([n, d, cap(dagNaam(d)), "Dienst " + sl.n, sl.van + "–" + sl.tot, pos[1], VERGOEDING, changed(ds, pos) ? "overgenomen/ingevuld" : ""]);
+      details.push([n, new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())), cap(dagNaam(d)), "Dienst " + sl.n, sl.van + "–" + sl.tot, pos[1], VERGOEDING, changed(ds, pos) ? "overgenomen/ingevuld" : ""]);
     });
   });
   if (!details.length){ toast("Nog geen gevaren diensten om te tellen."); return; }
@@ -1384,6 +1384,72 @@ renderPosts = function(){
 };
 const _applyNameAfspr = applyName;
 applyName = function(){ _applyNameAfspr(); renderAfspraken(); };
+
+/* ---------- Overgenomen diensten: rood in het rooster en in de Excel ---------- */
+(function(){
+  const st = document.createElement("style");
+  st.textContent = ".name.chg:not(.me):not(.offer){color:#b42318;font-weight:600}";
+  document.head.append(st);
+  const lg = [...document.querySelectorAll(".legend > span")].find(s => /gewijzigd/.test(s.textContent));
+  if (lg) lg.innerHTML = "<span class=\"name chg\">Naam</span> overgenomen / gewijzigd t.o.v. vaarrooster";
+})();
+const xlDatum = ds => { const [y, m, d] = ds.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+function soortWijziging(ds, pos){
+  if (!changed(ds, pos)) return "";
+  const n = eff(ds, pos), b = base(ds, pos);
+  if (!n) return "Open gemaakt";
+  if (!b) return "Open plek ingevuld";
+  return "Overgenomen";
+}
+$("#xlsx").onclick = async () => {
+  let EJ; try{ EJ = await laadExcelJS(); }catch(e){ toast("Downloaden lukte niet (geen verbinding)."); return; }
+  const wb = new EJ.Workbook();
+  const ROOD = {font: {bold: true, color: {argb: "FFB42318"}}, fill: {type: "pattern", pattern: "solid", fgColor: {argb: "FFFDE2E1"}}};
+  const ORANJE = {font: {color: {argb: "FF8A3E10"}}, fill: {type: "pattern", pattern: "solid", fgColor: {argb: "FFFDEBD3"}}};
+  const OPEN = {font: {bold: true, color: {argb: "FFA3263C"}}, fill: {type: "pattern", pattern: "solid", fgColor: {argb: "FFFDE2E6"}}};
+  const kop = r => { r.font = {bold: true}; r.fill = {type: "pattern", pattern: "solid", fgColor: {argb: "FFE8F1F8"}}; };
+  // Blad 1: rooster met kleuren
+  const ws = wb.addWorksheet("Rooster", {views: [{state: "frozen", xSplit: 2, ySplit: 1}]});
+  ws.columns = [{header: "Datum", width: 12}, {header: "Dag", width: 11}, {header: "Dienst 1 a", width: 18}, {header: "Dienst 1 b", width: 18}, {header: "Dienst 2 a", width: 18}, {header: "Dienst 2 b", width: 18}, {header: "Dienst 3 a", width: 18}, {header: "Dienst 3 b", width: 18}, {header: "Opmerking", width: 28}];
+  kop(ws.getRow(1));
+  const lijst = [], perSchipper = {};
+  DATES.forEach(ds => {
+    const d = fromIso(ds), dx = xlDatum(ds), gv = geenVaart(ds);
+    if (gv){ const r = ws.addRow([dx, cap(dagNaam(d)), "", "", "", "", "", "", gv]); r.getCell(1).numFmt = "dd-mm-yyyy"; r.font = {color: {argb: "FF888888"}}; return; }
+    const r = ws.addRow([dx, cap(dagNaam(d))].concat(POS.map(p => { const n = eff(ds, p); return !n ? "OPEN" : n + (offered(ds, p) ? " (ter overname)" : ""); }), [""]));
+    r.getCell(1).numFmt = "dd-mm-yyyy";
+    POS.forEach((p, i) => {
+      const c = r.getCell(3 + i), soort = soortWijziging(ds, p);
+      if (offered(ds, p)) Object.assign(c, ORANJE);
+      else if (soort) Object.assign(c, ROOD);
+      else if (!eff(ds, p)) Object.assign(c, OPEN);
+      if (soort){
+        const sl = slotsFor(d)[Number(p[0]) - 1];
+        lijst.push([dx, cap(dagNaam(d)), "Dienst " + sl.n, sl.van + "–" + sl.tot, p[1], base(ds, p) || "open", eff(ds, p) || "open", soort, offered(ds, p) ? "ja" : ""]);
+        const n = eff(ds, p); if (n && soort !== "Open gemaakt") perSchipper[n] = (perSchipper[n] || 0) + 1;
+      }
+    });
+  });
+  ws.addRow([]);
+  const lg = ws.addRow(["", "Legenda:", "Overgenomen", "Ter overname", "OPEN"]);
+  Object.assign(lg.getCell(3), ROOD); Object.assign(lg.getCell(4), ORANJE); Object.assign(lg.getCell(5), OPEN);
+  // Blad 2: lijst overgenomen diensten
+  const w2 = wb.addWorksheet("Overgenomen diensten", {views: [{state: "frozen", ySplit: 1}]});
+  w2.columns = [{header: "Datum", width: 12}, {header: "Dag", width: 11}, {header: "Dienst", width: 9}, {header: "Tijd", width: 12}, {header: "Plek", width: 6}, {header: "Vaarrooster", width: 16}, {header: "Nu ingeroosterd", width: 18}, {header: "Soort", width: 18}, {header: "Ter overname", width: 13}];
+  kop(w2.getRow(1));
+  lijst.forEach(x => { const r = w2.addRow(x); r.getCell(1).numFmt = "dd-mm-yyyy"; if (x[7] === "Overgenomen") Object.assign(r.getCell(7), ROOD); });
+  if (!lijst.length) w2.addRow(["Geen overgenomen of gewijzigde diensten."]);
+  // Blad 3: per schipper
+  const w3 = wb.addWorksheet("Per schipper");
+  w3.columns = [{header: "Schipper", width: 18}, {header: "Diensten overgenomen / ingevuld", width: 32}];
+  kop(w3.getRow(1));
+  Object.keys(perSchipper).sort((a, b) => perSchipper[b] - perSchipper[a] || a.localeCompare(b)).forEach(n => w3.addRow([n, perSchipper[n]]));
+  const buf = await wb.xlsx.writeBuffer();
+  const url = URL.createObjectURL(new Blob([buf], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+  const a = document.createElement("a"); a.href = url; a.download = "Spaarneveer-rooster-" + iso(new Date()) + ".xlsx"; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast("Rooster gedownload (overgenomen diensten in rood).");
+};
 
 /* ---------- start ---------- */
 applyName();
