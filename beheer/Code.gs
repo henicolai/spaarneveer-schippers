@@ -111,6 +111,66 @@ function stuurOvernameMail_(key, naam, vorigeNaam, alleen) {
     });
   } catch (err) { console.error('Overnamemail mislukt: ' + err); }
 }
+// ---- Wachtrij: aanbiedingen bundelen (elke 5 minuten één mail per aanbieder) ----
+const wachtSheet_ = () => sheet_('Wachtrij', ['sleutel', 'naam', 'aan', 'tijd']);
+function inWachtrij_(key, naam, aan) {
+  wachtSheet_().appendRow([key, naam, aan || '', new Date()]);
+  const lijst = aan ? adresVan_(aan) : mailOntvangers_(naam);
+  return lijst.length;
+}
+function uitWachtrij_(key) {
+  const sh = wachtSheet_(); const v = sh.getDataRange().getValues();
+  if (v.length < 2) return false;
+  const rest = v.slice(1).filter(r => String(r[0]) !== key);
+  if (rest.length === v.length - 1) return false;
+  sh.getRange(2, 1, v.length - 1, v[0].length).clearContent();
+  if (rest.length) sh.getRange(2, 1, rest.length, v[0].length).setValues(rest);
+  return true;
+}
+function verwerkWachtrij() {
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const sh = wachtSheet_(); const v = sh.getDataRange().getValues();
+    if (v.length < 2) return;
+    sh.getRange(2, 1, v.length - 1, v[0].length).clearContent();
+    const wijz = {};
+    wijzSheet_().getDataRange().getValues().slice(1).forEach(r => { if (r[0]) wijz[String(r[0])] = { naam: String(r[1] || ''), aangeboden: r[2] === true || r[2] === 'TRUE' }; });
+    const groepen = {};
+    v.slice(1).forEach(r => {
+      const key = String(r[0] || ''), naam = String(r[1] || ''), aan = String(r[2] || '');
+      const w = wijz[key];
+      if (!key || !w || !w.aangeboden || w.naam !== naam) return;   // intussen ingetrokken of overgenomen
+      const g = naam + '|' + aan;
+      (groepen[g] = groepen[g] || { naam, aan, keys: [] });
+      if (groepen[g].keys.indexOf(key) < 0) groepen[g].keys.push(key);
+    });
+    Object.keys(groepen).forEach(g => stuurAanbodBundel_(groepen[g].naam, groepen[g].aan, groepen[g].keys.sort()));
+  } finally { lock.releaseLock(); }
+}
+function stuurAanbodBundel_(naam, aan, keys) {
+  if (keys.length === 1) return stuurAanbodMail_(keys[0], naam, aan);
+  try {
+    const lijst = aan ? adresVan_(aan) : mailOntvangers_(naam);
+    if (!lijst.length) return 0;
+    if (MailApp.getRemainingDailyQuota() < lijst.length) { console.warn('Mailquotum op, geen bundelmail voor ' + naam); return -1; }
+    const regels = keys.map(k => '- ' + dienstTekst_(k) + '\n  ' + PAGINA_URL + '#d-' + k).join('\n\n');
+    MailApp.sendEmail({
+      to: BEHEERDER_EMAIL,
+      bcc: lijst.join(','),
+      subject: 'Spaarneveer: ' + keys.length + ' diensten ter overname – ' + naam,
+      body: (aan ? 'Hoi ' + aan + ',\n\n' + naam + ' kan niet varen en vraagt of jij deze diensten wilt overnemen:\n\n' : naam + ' kan niet varen en biedt deze diensten ter overname aan:\n\n') + regels + '\n\n' +
+            'Kun jij er een of meer? Tik op de link en dan op Overnemen.\n\n' +
+            '(Wie het eerst overneemt, vaart. Geen mail meer ontvangen? Laat het de beheerder weten.)',
+      name: 'Spaarneveer schippersrooster'
+    });
+    return lijst.length;
+  } catch (err) { console.error('Bundelmail mislukt: ' + err); return -2; }
+}
+// Eenmalig uitvoeren vanuit de editor: zet de 5-minuten-trigger voor de wachtrij aan.
+function zetWachtrijTriggerAan() {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'verwerkWachtrij').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('verwerkWachtrij').timeBased().everyMinutes(5).create();
+}
 // Eenmalig uitvoeren vanuit de editor om toestemming voor e-mail te geven.
 function testMail() {
   MailApp.sendEmail(BEHEERDER_EMAIL, 'Spaarneveer: test e-mail', 'Het schippersrooster kan nu e-mails versturen.\n' + PAGINA_URL);
@@ -152,9 +212,10 @@ function doPost(e) {
         const rij = [key, naam, !!req.aangeboden, String(req.vorige || '').slice(0, 40), Date.now(), aan];
         if (idx > 0) sh.getRange(idx + 1, 1, 1, 6).setValues([rij]); else sh.appendRow(rij);
         const stil = beheer && req.stil === true;   // beheerwijziging zonder e-mail
-        if (!stil && req.aangeboden && !wasAangeboden) gemaild = stuurAanbodMail_(key, naam, aan);
+        if (!stil && req.aangeboden && !wasAangeboden) gemaild = inWachtrij_(key, naam, aan);
         const vorigeNaam = idx > 0 ? String(rows[idx][1] || '') : '';
-        if (!stil && wasAangeboden && !req.aangeboden && naam && naam !== vorigeNaam) stuurOvernameMail_(key, naam, vorigeNaam, vorigAan ? vorigeNaam : '');
+        const nogInWachtrij = wasAangeboden && !req.aangeboden ? uitWachtrij_(key) : false;   // aanbod was nog niet gemaild
+        if (!stil && !nogInWachtrij && wasAangeboden && !req.aangeboden && naam && naam !== vorigeNaam) stuurOvernameMail_(key, naam, vorigeNaam, vorigAan ? vorigeNaam : '');
       }
       return json_(Object.assign(lees_(), { gemaild }));
     }
@@ -199,6 +260,25 @@ function doPost(e) {
         if (idx > 0) sh.getRange(idx + 1, 1, 1, 4).setValues([rij]); else sh.appendRow(rij);
       }
       return json_(lees_());
+    }
+    if (req.actie === 'hernoem' && beheer) {
+      // naam van een schipper overal in de Sheet vervangen (Rooster, Wijzigingen, Schippers)
+      const oud = String(req.oud || '').trim(), nieuw = String(req.nieuw || '').trim().slice(0, 40);
+      if (!oud || !nieuw) return json_({ ok: false, fout: 'Oude en nieuwe naam nodig' });
+      const aantal = {};
+      [['Rooster', [1, 2, 3, 4, 5, 6]], [TAB_WIJZ, [1, 3, 5]], ['Schippers', [0]]].forEach(([tab, kol]) => {
+        const sh = sheet_(tab, []); const v = sh.getDataRange().getValues(); let n = 0;
+        for (let i = 1; i < v.length; i++) kol.forEach(k => { if (k < v[i].length && String(v[i][k]).trim() === oud) { sh.getRange(i + 1, k + 1).setValue(nieuw); n++; } });
+        aantal[tab] = n;
+      });
+      return json_(Object.assign(lees_(), { hernoemd: aantal }));
+    }
+    if (req.actie === 'verwijderschipper' && beheer) {
+      // schipper uit tabblad Schippers halen (rooster blijft ongewijzigd)
+      const naam = String(req.naam || '').trim(); if (!naam) return json_({ ok: false, fout: 'Naam nodig' });
+      const sh = schippersSheet_(); const v = sh.getDataRange().getValues(); let n = 0;
+      for (let i = v.length - 1; i >= 1; i--) if (String(v[i][0]).trim() === naam) { sh.deleteRow(i + 1); n++; }
+      return json_(Object.assign(lees_(), { verwijderd: n }));
     }
     if (req.actie === 'bericht' && beheer) {
       const t = String(req.tekst || '').trim().slice(0, 2000);
