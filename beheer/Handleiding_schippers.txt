@@ -27,7 +27,7 @@ Je telefoon onthoudt dit; de volgende keer hoeft het niet opnieuw.
     groen          = jouw dienst
     oranje, doorgestreept = ter overname aangeboden
     roze "open plek"      = schipper gezocht
-    naam met •     = gewijzigd t.o.v. het vaarrooster
+    rode naam      = overgenomen / gewijzigd t.o.v. het vaarrooster
 - Tabblad "Mijn diensten": al jouw komende diensten op een rij.
 
 
@@ -39,6 +39,8 @@ Je telefoon onthoudt dit; de volgende keer hoeft het niet opnieuw.
     "Alleen <naam>" = alleen die collega krijgt een e-mail met de
                      vraag of hij/zij de dienst wil overnemen.
 - De dienst verschijnt in beide gevallen onder "Open plekken".
+- De e-mail gaat binnen 5 minuten uit. Draag je meerdere diensten
+  achter elkaar over, dan komen die samen in één e-mail.
 - LET OP: je blijft ingeroosterd tot iemand de dienst overneemt.
   Zonder 2 schippers vaart de pont niet.
 - Toch wel kunnen? Tik op "Intrekken".
