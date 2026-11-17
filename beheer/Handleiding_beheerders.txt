@@ -57,6 +57,13 @@ wijzigen, gebruik dan altijd ✎.
   verwijderen. Alle schippers zien ze op de pagina (geen e-mail).
 - Tabblad "Contact": met "Bewerken" pas je de contactgegevens aan,
   daarna "Opslaan".
+- Tabblad "Afspraken": met "Afspraken bewerken" pas je de tekst aan.
+    # Kopje        = nieuw blok met een titel
+    - tekst        = opsommingspunt
+    **woord**      = vetgedrukt
+    lege regel     = witruimte
+  "Opslaan" zet het meteen op de pagina. "Standaardtekst terugzetten"
+  haalt de oorspronkelijke tekst terug in het invulvak.
 
 
 5. E-MAILLIJST VAN DE SCHIPPERS
@@ -69,8 +76,7 @@ wijzigen, gebruik dan altijd ✎.
   Een nieuwe naam in kolom A is daarna ook te kiezen bij "Ik ben",
   bij ✎, bij "Overdragen aan…" en bij "Rooster maken", ook als die
   schipper nog niet in het rooster staat.
-- Henk N staat erin zonder e-mailadres: hij krijgt alle mails al als
-  afzender.
+- Henk N krijgt alle mails ook al als afzender.
 - Wie geen adres heeft (nu: JeroenB), krijgt geen mails. Kiest een
   schipper bij "Overdragen" zo iemand, dan meldt de pagina dat er
   geen mail is verstuurd.
@@ -86,8 +92,19 @@ wijzigen, gebruik dan altijd ✎.
 - Intrekken, open plek invullen, ✎, rooster opslaan: géén mail.
 - Afzender is hnicolai@gmail.com ("Spaarneveer schippersrooster").
 
+BUNDELEN: een aanbod gaat eerst in de wachtrij (tabblad "Wachtrij"
+in de Sheet). Elke 5 minuten verstuurt het script per schipper één
+e-mail met al zijn aangeboden diensten, elk met een eigen link.
+Wordt een aanbod binnen die 5 minuten ingetrokken of al overgenomen,
+dan gaat er voor die dienst helemaal geen mail uit (ook geen
+overnamemail). Het tabblad "Wachtrij" niet hernoemen of verwijderen.
+De 5-minutentaak staat in het script onder Triggers
+("verwerkWachtrij"). Staat die er niet meer, voer dan in de editor
+eenmalig "zetWachtrijTriggerAan" uit.
+
 MAIL-LIMIET: Google staat maximaal ongeveer 100 ontvangers per dag
-toe. Eén aanbod aan iedereen + de overname = ca. 60 ontvangers.
+toe. Eén aanbod aan iedereen + de overname = ca. 60 ontvangers;
+meerdere diensten van dezelfde schipper tellen als één aanbod.
 Is de limiet op, dan slaat het systeem de mail over; het rooster zelf
 blijft gewoon kloppen. De volgende dag werkt het weer.
 
@@ -123,7 +140,7 @@ blijft gewoon kloppen. De volgende dag werkt het weer.
   Na een wijziging in het script: Implementeren > Implementaties
   beheren > potlood > Versie: Nieuwe versie > Implementeren.
 - Tabbladen in de Sheet: Wijzigingen, Mededelingen, Rooster,
-  Schippers, Passagiers. Niet hernoemen of verwijderen.
+  Schippers, Passagiers, Wachtrij. Niet hernoemen of verwijderen.
 - Codes wijzigen: bovenin het script (SCHIPPERSCODE / BEHEERCODE),
   daarna opnieuw implementeren en de nieuwe code doorgeven.
 
