@@ -35,6 +35,8 @@
   .status{display:inline-flex;align-items:center;gap:8px;margin-top:16px;background:rgba(255,255,255,.1);padding:6px 12px;border-radius:999px;font-size:.88rem}
   .dot{width:9px;height:9px;border-radius:50%;background:#7fd1a7;box-shadow:0 0 0 3px rgba(127,209,167,.25)}
   .dot.off{background:#f0a37a;box-shadow:0 0 0 3px rgba(240,163,122,.25)}
+  .status.dicht{background:#c2570c;color:#fff;font-weight:600}
+  .status.dicht .dot{background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.3)}
   nav{position:sticky;top:0;z-index:5;background:rgba(246,248,250,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
   nav .in{max-width:980px;margin:0 auto;display:flex;gap:4px;padding:8px 14px;overflow-x:auto}
   nav button{border:0;background:none;padding:8px 14px;border-radius:999px;color:var(--muted);font-weight:500;white-space:nowrap}
@@ -335,13 +337,21 @@ function show(t){
 if (location.hash && document.getElementById(location.hash.slice(1))) show(location.hash.slice(1));
 
 /* ---------- vaarstatus ---------- */
-(function(){
+function vaarStatus(){
   const n=new Date(), w=n.getDay(), h=n.getHours()+n.getMinutes()/60;
+  const tijden="ma–vr 7.30–18.00 · za, zo & feestdagen 9.00–18.00";
+  const el=$("#vaarstatus"), gv=geenVaart(iso(today0()));
+  el.classList.toggle("dicht", !!gv);
+  if (gv){
+    el.querySelector(".dot").classList.add("off");
+    el.lastElementChild.textContent = "Vandaag geen vaart" + (gv && gv!=="Geen vaart" ? ": "+gv.replace(/\s*[—–-]\s*geen vaart\s*$/i,"") : "");
+    return;
+  }
   const open = (w===0||w===6) ? (h>=9&&h<18) : (h>=7.5&&h<18);
-  const el=$("#vaarstatus");
   el.querySelector(".dot").classList.toggle("off",!open);
-  el.lastElementChild.textContent = (open?"Nu vaartijd · ":"Nu buiten vaartijd · ") + "ma–vr 7.30–18.00 · za, zo & feestdagen 9.00–18.00";
-})();
+  el.lastElementChild.textContent = (open?"Nu vaartijd · ":"Nu buiten vaartijd · ") + tijden;
+}
+vaarStatus(); setInterval(vaarStatus, 60000);
 $("#bronregel").textContent = "Bron: " + ROOSTER_BRON + ". Wijzigingen via deze pagina staan erbovenop.";
 
 /* ---------- wie ben ik + code ---------- */
@@ -484,7 +494,7 @@ function renderOpen(){
   $("#openbadge").textContent = n ? "("+n+")" : "";
   if (!canAct() && n){ const p=document.createElement("p"); p.className="empty"; p.style.marginTop="8px"; p.textContent = !myName ? "Kies bovenaan je naam om een dienst over te nemen." : (!code ? "Vul bovenaan de schipperscode in om een dienst over te nemen." : "Geen verbinding met de opslag."); list.append(p); }
 }
-function renderAll(){ renderWeek(); renderMine(); renderOpen(); }
+function renderAll(){ renderWeek(); renderMine(); renderOpen(); vaarStatus(); }
 
 /* ---------- schrijven ---------- */
 let busy=false;
